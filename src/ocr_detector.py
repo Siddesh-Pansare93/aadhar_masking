@@ -184,15 +184,15 @@ class AadhaarOCRDetector:
             logger.error(f"Error in Aadhaar detection: {e}")
             return None
     
-    def detect_aadhaar_number_with_location(self, image_path: str) -> Optional[Tuple[str, Tuple[int, int, int, int]]]:
+    def detect_aadhaar_number_with_all_locations(self, image_path: str) -> Optional[Tuple[str, List[Tuple[int, int, int, int]]]]:
         """
-        Detect Aadhaar number and return both the number and its location in the image.
+        Detect Aadhaar number and return both the number and ALL its locations in the image.
         
         Args:
             image_path (str): Path to the Aadhaar card image
             
         Returns:
-            Optional[Tuple[str, Tuple[int, int, int, int]]]: (Aadhaar number, (x, y, width, height)) if found
+            Optional[Tuple[str, List[Tuple[int, int, int, int]]]]: (Aadhaar number, list of (x, y, width, height)) if found
         """
         try:
             # Preprocess the image
@@ -202,98 +202,128 @@ class AadhaarOCRDetector:
                 # Use EasyOCR and get bounding boxes
                 results = self.ocr_reader.readtext(processed_image)
                 
-                # Look for Aadhaar number in results with bounding box
-                for (bbox, text, conf) in results:
-                    if conf > 0.5:  # Only consider text with confidence > 50%
-                        aadhaar_number = self.extract_aadhaar_number(text)
-                        if aadhaar_number:
-                            # Convert bbox to standard format (x, y, width, height)
-                            x_coords = [point[0] for point in bbox]
-                            y_coords = [point[1] for point in bbox]
-                            
-                            x = int(min(x_coords))
-                            y = int(min(y_coords))
-                            width = int(max(x_coords) - min(x_coords))
-                            height = int(max(y_coords) - min(y_coords))
-                            
-                            logger.info(f"Aadhaar number detected with location: {aadhaar_number} at ({x}, {y}, {width}, {height})")
-                            return (aadhaar_number, (x, y, width, height))
-                
-                # If no direct match, try extracting from combined text
+                # First, extract the Aadhaar number from combined text
                 all_text = " ".join([text for (bbox, text, conf) in results if conf > 0.5])
                 aadhaar_number = self.extract_aadhaar_number(all_text)
+                
                 if aadhaar_number:
-                    # Try to find multi-part Aadhaar number (e.g., "7227", "5442", "0564")
+                    all_locations = []
                     target_parts = aadhaar_number.split()  # ["7227", "5442", "0564"]
+                    target_digits = aadhaar_number.replace(' ', '')  # "722754420564"
                     
-                    found_parts = []
-                    for part in target_parts:
-                        for (bbox, text, conf) in results:
-                            if conf > 0.5:
-                                text_digits = re.sub(r'\D', '', text)
-                                if text_digits == part:
-                                    found_parts.append((part, bbox))
-                                    break
+                    logger.info(f"Searching for ALL occurrences of: {aadhaar_number}")
                     
-                    # If we found all 3 parts of the Aadhaar number
-                    if len(found_parts) == 3:
-                        # Calculate combined bounding box
-                        all_x_coords = []
-                        all_y_coords = []
-                        
-                        for part, bbox in found_parts:
-                            x_coords = [point[0] for point in bbox]
-                            y_coords = [point[1] for point in bbox]
-                            all_x_coords.extend(x_coords)
-                            all_y_coords.extend(y_coords)
-                        
-                        # Get overall bounding box
-                        x = int(min(all_x_coords))
-                        y = int(min(all_y_coords))
-                        max_x = int(max(all_x_coords))
-                        max_y = int(max(all_y_coords))
-                        width = max_x - x
-                        height = max_y - y
-                        
-                        logger.info(f"Multi-part Aadhaar number found: {aadhaar_number} at ({x}, {y}, {width}, {height})")
-                        return (aadhaar_number, (x, y, width, height))
+                    # Method 1: Look for complete multi-part Aadhaar numbers
+                    potential_groups = []
                     
-                    # Fallback: try to find the best single matching bbox
-                    target_digits = aadhaar_number.replace(' ', '')
+                    # Group nearby text elements that might form complete Aadhaar numbers
+                    for i, (bbox1, text1, conf1) in enumerate(results):
+                        if conf1 > 0.5:
+                            text1_digits = re.sub(r'\D', '', text1)
+                            if len(text1_digits) == 4 and text1_digits in target_digits:
+                                # This might be the start of an Aadhaar number
+                                group = [(text1, bbox1)]
+                                
+                                # Look for the next 2 parts nearby
+                                for j, (bbox2, text2, conf2) in enumerate(results):
+                                    if i != j and conf2 > 0.5:
+                                        text2_digits = re.sub(r'\D', '', text2)
+                                        if len(text2_digits) == 4 and text2_digits in target_digits:
+                                            # Check if it's nearby (same general area)
+                                            x1_coords = [p[0] for p in bbox1]
+                                            y1_coords = [p[1] for p in bbox1]
+                                            x2_coords = [p[0] for p in bbox2]
+                                            y2_coords = [p[1] for p in bbox2]
+                                            
+                                            # If elements are close to each other (same line roughly)
+                                            y1_center = (min(y1_coords) + max(y1_coords)) / 2
+                                            y2_center = (min(y2_coords) + max(y2_coords)) / 2
+                                            
+                                            if abs(y1_center - y2_center) < 50:  # Same line tolerance
+                                                group.append((text2, bbox2))
+                                
+                                # If we found 3 parts that form the complete Aadhaar number
+                                if len(group) == 3:
+                                    group_digits = ''.join([re.sub(r'\D', '', text) for text, bbox in group])
+                                    if group_digits == target_digits:
+                                        # Calculate combined bounding box for this group
+                                        all_x_coords = []
+                                        all_y_coords = []
+                                        
+                                        for text, bbox in group:
+                                            x_coords = [point[0] for point in bbox]
+                                            y_coords = [point[1] for point in bbox]
+                                            all_x_coords.extend(x_coords)
+                                            all_y_coords.extend(y_coords)
+                                        
+                                        x = int(min(all_x_coords))
+                                        y = int(min(all_y_coords))
+                                        max_x = int(max(all_x_coords))
+                                        max_y = int(max(all_y_coords))
+                                        width = max_x - x
+                                        height = max_y - y
+                                        
+                                        all_locations.append((x, y, width, height))
+                                        logger.info(f"Found complete Aadhaar group at: ({x}, {y}, {width}, {height})")
                     
+                    # Method 2: Look for single text blocks containing the full number
                     for (bbox, text, conf) in results:
                         if conf > 0.5:
+                            # Check if this single text block contains the full Aadhaar number
                             text_digits = re.sub(r'\D', '', text)
-                            # Check if this text contains significant portion of Aadhaar number
-                            if len(text_digits) >= 8:
-                                overlap = 0
-                                for i in range(len(target_digits) - 7):
-                                    if target_digits[i:i+8] in text_digits:
-                                        overlap = 8
+                            if target_digits in text_digits and len(text_digits) >= 12:
+                                x_coords = [point[0] for point in bbox]
+                                y_coords = [point[1] for point in bbox]
+                                
+                                x = int(min(x_coords))
+                                y = int(min(y_coords))
+                                width = int(max(x_coords) - min(x_coords))
+                                height = int(max(y_coords) - min(y_coords))
+                                
+                                # Check if this location is already covered by a group
+                                is_duplicate = False
+                                for existing_x, existing_y, existing_w, existing_h in all_locations:
+                                    if (abs(x - existing_x) < 50 and abs(y - existing_y) < 50):
+                                        is_duplicate = True
                                         break
                                 
-                                if overlap >= 8:
-                                    x_coords = [point[0] for point in bbox]
-                                    y_coords = [point[1] for point in bbox]
-                                    
-                                    x = int(min(x_coords))
-                                    y = int(min(y_coords))
-                                    width = int(max(x_coords) - min(x_coords))
-                                    height = int(max(y_coords) - min(y_coords))
-                                    
-                                    logger.info(f"Aadhaar number found with approximate location: {aadhaar_number} at ({x}, {y}, {width}, {height})")
-                                    return (aadhaar_number, (x, y, width, height))
+                                if not is_duplicate:
+                                    all_locations.append((x, y, width, height))
+                                    logger.info(f"Found single block Aadhaar at: ({x}, {y}, {width}, {height})")
+                    
+                    if all_locations:
+                        logger.info(f"Total locations found: {len(all_locations)}")
+                        return (aadhaar_number, all_locations)
             
             # Fallback to regular detection without location
             aadhaar_number = self.detect_aadhaar_number(image_path)
             if aadhaar_number:
-                return (aadhaar_number, None)
+                return (aadhaar_number, [])
             
             return None
             
         except Exception as e:
-            logger.error(f"Error in Aadhaar detection with location: {e}")
+            logger.error(f"Error in Aadhaar detection with all locations: {e}")
             return None
+
+    def detect_aadhaar_number_with_location(self, image_path: str) -> Optional[Tuple[str, Tuple[int, int, int, int]]]:
+        """
+        Detect Aadhaar number and return both the number and its location in the image.
+        (Legacy method - returns only first location)
+        
+        Args:
+            image_path (str): Path to the Aadhaar card image
+            
+        Returns:
+            Optional[Tuple[str, Tuple[int, int, int, int]]]: (Aadhaar number, (x, y, width, height)) if found
+        """
+        result = self.detect_aadhaar_number_with_all_locations(image_path)
+        if result:
+            aadhaar_number, locations = result
+            if locations:
+                return (aadhaar_number, locations[0])  # Return first location
+            return (aadhaar_number, None)
+        return None
 
     def detect_with_multiple_methods(self, image_path: str) -> Optional[str]:
         """

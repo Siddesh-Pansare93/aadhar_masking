@@ -380,4 +380,75 @@ class AadhaarImageMasker:
             
         except Exception as e:
             logger.error(f"Error in text replacement at location: {e}")
+            return False
+    
+    def replace_text_at_all_locations(self, image_path: str, original_text: str, masked_text: str, 
+                                     bboxes: List[Tuple[int, int, int, int]], output_path: str) -> bool:
+        """
+        Replace text at ALL specified locations in the image.
+        
+        Args:
+            image_path (str): Path to input image
+            original_text (str): Original Aadhaar number
+            masked_text (str): Masked Aadhaar number
+            bboxes (List[Tuple[int, int, int, int]]): List of bounding boxes (x, y, width, height)
+            output_path (str): Path to save masked image
+            
+        Returns:
+            bool: Success status
+        """
+        try:
+            # Load the image
+            image = cv2.imread(image_path)
+            if image is None:
+                logger.error(f"Could not load image: {image_path}")
+                return False
+            
+            logger.info(f"Masking Aadhaar number at {len(bboxes)} locations")
+            
+            # Process each location
+            for i, bbox in enumerate(bboxes):
+                x, y, width, height = bbox
+                
+                logger.info(f"Processing location {i+1}/{len(bboxes)}: ({x}, {y}, {width}, {height})")
+                
+                # Add some padding around the text
+                padding = max(5, height // 10)
+                x = max(0, x - padding)
+                y = max(0, y - padding)
+                width = min(image.shape[1] - x, width + 2 * padding)
+                height = min(image.shape[0] - y, height + 2 * padding)
+                
+                # Get the background color (average color of surrounding area)
+                background_color = self._get_background_color(image, x, y, width, height)
+                
+                # Cover the original text with background color
+                cv2.rectangle(image, (x, y), (x + width, y + height), background_color, -1)
+                
+                # Calculate appropriate font size based on the bounding box
+                font_scale = self._calculate_font_scale(masked_text, width, height)
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                thickness = max(1, int(font_scale * 2))
+                
+                # Calculate text position (centered in the bbox)
+                text_size = cv2.getTextSize(masked_text, font, font_scale, thickness)[0]
+                text_x = x + (width - text_size[0]) // 2
+                text_y = y + (height + text_size[1]) // 2
+                
+                # Determine text color (black or white based on background)
+                text_color = self._get_text_color(background_color)
+                
+                # Draw the masked text
+                cv2.putText(image, masked_text, (text_x, text_y), font, font_scale, text_color, thickness)
+                
+                logger.info(f"Masked location {i+1} with background color {background_color} and text color {text_color}")
+            
+            # Save the result
+            cv2.imwrite(output_path, image)
+            logger.info(f"Successfully replaced text at ALL {len(bboxes)} locations. Saved to: {output_path}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in text replacement at all locations: {e}")
             return False 

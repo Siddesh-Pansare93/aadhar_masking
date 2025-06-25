@@ -40,18 +40,21 @@ def main():
     # Initialize OCR detector
     detector = AadhaarOCRDetector(use_easyocr=True)
     
-    # Detect Aadhaar number with location
+    # Detect Aadhaar number with ALL locations
     detector.use_easyocr = (args.ocr_method != 'tesseract')  # Use EasyOCR unless specifically tesseract
     
-    detection_result = detector.detect_aadhaar_number_with_location(args.image)
+    detection_result = detector.detect_aadhaar_number_with_all_locations(args.image)
     
     if detection_result:
-        aadhaar_number, bbox = detection_result
+        aadhaar_number, bboxes = detection_result
         print(f"✅ Aadhaar Number Detected: {aadhaar_number}")
         
-        if bbox:
-            x, y, width, height = bbox
-            print(f"📍 Location found: ({x}, {y}) with size {width}x{height}")
+        if bboxes:
+            print(f"📍 Found {len(bboxes)} location(s):")
+            for i, (x, y, width, height) in enumerate(bboxes, 1):
+                print(f"   Location {i}: ({x}, {y}) with size {width}x{height}")
+        else:
+            print("📍 No specific locations found, will use fallback method")
         
         # Initialize masker
         masker = AadhaarImageMasker()
@@ -62,21 +65,24 @@ def main():
         
         # Save masked image if output path provided
         if args.output:
-            if bbox:
-                # Use the detected location for precise replacement
-                success = masker.replace_text_at_location(
-                    args.image, aadhaar_number, masked_number, bbox, args.output
+            if bboxes:
+                # Use ALL detected locations for precise replacement
+                success = masker.replace_text_at_all_locations(
+                    args.image, aadhaar_number, masked_number, bboxes, args.output
                 )
+                if success:
+                    print(f"💾 Masked image saved with {len(bboxes)} locations replaced: {args.output}")
+                else:
+                    print("❌ Failed to save masked image")
             else:
                 # Fallback to general replacement
                 success = masker.replace_text_in_image(
                     args.image, aadhaar_number, masked_number, args.output
                 )
-            
-            if success:
-                print(f"💾 Masked image saved: {args.output}")
-            else:
-                print("❌ Failed to save masked image")
+                if success:
+                    print(f"💾 Masked image saved (fallback method): {args.output}")
+                else:
+                    print("❌ Failed to save masked image")
         
         return 0
     else:
