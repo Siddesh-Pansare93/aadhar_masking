@@ -1,0 +1,9 @@
+opencv-python
+pillow
+numpy
+requests
+python-dotenv
+easyocr
+pytesseract
+matplotlib
+regex 
