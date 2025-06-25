@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class AadhaarImageMasker:
     """
-    Class for masking the first 4 digits of Aadhaar numbers in images.
+    Class for masking the first 8 digits of Aadhaar numbers in images.
     """
     
     def __init__(self):
@@ -19,20 +19,20 @@ class AadhaarImageMasker:
     
     def mask_aadhaar_number(self, aadhaar_number: str) -> str:
         """
-        Mask the first 4 digits of an Aadhaar number with 'X'.
+        Mask the first 8 digits of an Aadhaar number with 'X'.
         
         Args:
             aadhaar_number (str): Original Aadhaar number (e.g., "1234 5678 9012")
             
         Returns:
-            str: Masked Aadhaar number (e.g., "XXXX 5678 9012")
+            str: Masked Aadhaar number (e.g., "XXXX XXXX 9012")
         """
         if not aadhaar_number or len(aadhaar_number.replace(' ', '')) != 12:
             raise ValueError("Invalid Aadhaar number format")
         
-        # Remove spaces and mask first 4 digits
+        # Remove spaces and mask first 8 digits
         digits_only = aadhaar_number.replace(' ', '')
-        masked = 'XXXX' + digits_only[4:]
+        masked = 'XXXXXXXX' + digits_only[8:]
         
         # Format back with spaces
         formatted_masked = f"{masked[:4]} {masked[4:8]} {masked[8:12]}"
@@ -154,8 +154,8 @@ class AadhaarImageMasker:
             # Get the background color (average color of surrounding area)
             background_color = self._get_background_color(image, x, y, width, height)
             
-            # Cover the original text with background color
-            cv2.rectangle(image, (x, y), (x + width, y + height), background_color, -1)
+            # Create a smooth background rectangle with blending
+            self._draw_blended_rectangle(image, x, y, width, height, background_color)
             
             # Calculate appropriate font size based on the bounding box
             font_scale = self._calculate_font_scale(masked_text, width, height)
@@ -228,7 +228,7 @@ class AadhaarImageMasker:
     
     def _get_background_color(self, image: np.ndarray, x: int, y: int, width: int, height: int) -> Tuple[int, int, int]:
         """
-        Get the background color around the text area.
+        Get the background color around the text area using advanced sampling.
         
         Args:
             image (np.ndarray): Input image
@@ -238,40 +238,132 @@ class AadhaarImageMasker:
             Tuple[int, int, int]: BGR color values
         """
         try:
-            # Sample areas around the text box
             h, w = image.shape[:2]
             
-            # Define sampling areas around the text
+            # Create a larger sampling area around the text
+            padding = max(15, min(width, height) // 2)
+            
+            # Define multiple sampling regions for better color detection
             samples = []
             
-            # Above text
-            if y > 10:
-                samples.append(image[max(0, y-10):y, x:x+width])
+            # Sample points around the perimeter of the text box
+            sample_points = []
             
-            # Below text  
-            if y + height < h - 10:
-                samples.append(image[y+height:min(h, y+height+10), x:x+width])
+            # Top edge samples
+            if y > padding:
+                for i in range(max(1, width // 10)):
+                    sample_x = x + (i * width // max(1, width // 10))
+                    sample_y = y - padding // 2
+                    if 0 <= sample_x < w and 0 <= sample_y < h:
+                        sample_points.append((sample_x, sample_y))
             
-            # Left of text
-            if x > 10:
-                samples.append(image[y:y+height, max(0, x-10):x])
+            # Bottom edge samples
+            if y + height + padding < h:
+                for i in range(max(1, width // 10)):
+                    sample_x = x + (i * width // max(1, width // 10))
+                    sample_y = y + height + padding // 2
+                    if 0 <= sample_x < w and 0 <= sample_y < h:
+                        sample_points.append((sample_x, sample_y))
             
-            # Right of text
-            if x + width < w - 10:
-                samples.append(image[y:y+height, x+width:min(w, x+width+10)])
+            # Left edge samples
+            if x > padding:
+                for i in range(max(1, height // 10)):
+                    sample_x = x - padding // 2
+                    sample_y = y + (i * height // max(1, height // 10))
+                    if 0 <= sample_x < w and 0 <= sample_y < h:
+                        sample_points.append((sample_x, sample_y))
             
-            if samples:
-                # Calculate average color from all samples
-                all_pixels = np.vstack([sample.reshape(-1, 3) for sample in samples if sample.size > 0])
-                avg_color = np.mean(all_pixels, axis=0)
+            # Right edge samples
+            if x + width + padding < w:
+                for i in range(max(1, height // 10)):
+                    sample_x = x + width + padding // 2
+                    sample_y = y + (i * height // max(1, height // 10))
+                    if 0 <= sample_x < w and 0 <= sample_y < h:
+                        sample_points.append((sample_x, sample_y))
+            
+            # Collect color samples from multiple points with small windows
+            window_size = 3
+            color_samples = []
+            
+            for px, py in sample_points:
+                # Sample a small window around each point
+                y1 = max(0, py - window_size)
+                y2 = min(h, py + window_size + 1)
+                x1 = max(0, px - window_size)
+                x2 = min(w, px + window_size + 1)
+                
+                window = image[y1:y2, x1:x2]
+                if window.size > 0:
+                    # Get median color from this window (more robust than mean)
+                    window_pixels = window.reshape(-1, 3)
+                    median_color = np.median(window_pixels, axis=0)
+                    color_samples.append(median_color)
+            
+            if color_samples:
+                # Use median of all samples for final color (robust against outliers)
+                color_samples = np.array(color_samples)
+                final_color = np.median(color_samples, axis=0)
+                return tuple(map(int, final_color))
+            
+            # Fallback: sample larger areas if points didn't work
+            fallback_samples = []
+            
+            # Above text (larger area)
+            if y > padding:
+                area = image[max(0, y-padding):y, x:x+width]
+                if area.size > 0:
+                    fallback_samples.append(area)
+            
+            # Below text (larger area)
+            if y + height + padding < h:
+                area = image[y+height:min(h, y+height+padding), x:x+width]
+                if area.size > 0:
+                    fallback_samples.append(area)
+            
+            # Left of text (larger area)
+            if x > padding:
+                area = image[y:y+height, max(0, x-padding):x]
+                if area.size > 0:
+                    fallback_samples.append(area)
+            
+            # Right of text (larger area)
+            if x + width + padding < w:
+                area = image[y:y+height, x+width:min(w, x+width+padding)]
+                if area.size > 0:
+                    fallback_samples.append(area)
+            
+            if fallback_samples:
+                # Calculate median color from all fallback samples
+                all_pixels = np.vstack([sample.reshape(-1, 3) for sample in fallback_samples])
+                median_color = np.median(all_pixels, axis=0)
+                return tuple(map(int, median_color))
+            
+            # Final fallback - sample the immediate border
+            border_pixels = []
+            
+            # Sample immediate border pixels
+            for dy in [-1, 0, 1]:
+                for dx in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+                    
+                    border_y = y + dy
+                    border_x = x + dx
+                    
+                    if 0 <= border_y < h and 0 <= border_x < w:
+                        border_pixels.append(image[border_y, border_x])
+            
+            if border_pixels:
+                border_pixels = np.array(border_pixels)
+                avg_color = np.mean(border_pixels, axis=0)
                 return tuple(map(int, avg_color))
-            else:
-                # Fallback to white
-                return (255, 255, 255)
+            
+            # Ultimate fallback
+            return (240, 240, 240)  # Light gray instead of pure white
                 
         except Exception as e:
-            logger.warning(f"Error getting background color: {e}, using white")
-            return (255, 255, 255)
+            logger.warning(f"Error getting background color: {e}, using light gray")
+            return (240, 240, 240)
     
     def _calculate_font_scale(self, text: str, target_width: int, target_height: int) -> float:
         """
@@ -318,6 +410,132 @@ class AadhaarImageMasker:
             return (0, 0, 0)  # Black
         else:
             return (255, 255, 255)  # White
+
+    def _draw_blended_rectangle(self, image: np.ndarray, x: int, y: int, width: int, height: int, background_color: Tuple[int, int, int]) -> None:
+        """
+        Draw a rectangle with blended edges for seamless background integration.
+        
+        Args:
+            image (np.ndarray): Input image to modify
+            x, y, width, height: Rectangle coordinates
+            background_color: BGR color tuple
+        """
+        try:
+            h, w = image.shape[:2]
+            
+            # Ensure coordinates are within image bounds
+            x = max(0, min(x, w - 1))
+            y = max(0, min(y, h - 1))
+            width = min(width, w - x)
+            height = min(height, h - y)
+            
+            if width <= 0 or height <= 0:
+                return
+            
+            # Create a mask for the rectangle area
+            mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.rectangle(mask, (x, y), (x + width, y + height), 255, -1)
+            
+            # Apply slight blur to the mask edges for smoother blending
+            kernel_size = max(3, min(width, height) // 10)
+            if kernel_size % 2 == 0:
+                kernel_size += 1
+            
+            # Create a slightly blurred mask for edge blending
+            blurred_mask = cv2.GaussianBlur(mask, (kernel_size, kernel_size), 0)
+            blurred_mask = blurred_mask.astype(np.float32) / 255.0
+            
+            # Sample the actual background around the edges for gradient blending
+            edge_colors = self._sample_edge_colors(image, x, y, width, height)
+            
+            # Create the replacement rectangle
+            replacement = np.full((h, w, 3), background_color, dtype=np.uint8)
+            
+            # Add slight color variation based on edge samples
+            if edge_colors:
+                # Create a gradient effect
+                for i, (edge_x, edge_y, edge_color) in enumerate(edge_colors):
+                    # Calculate distance from each pixel to this edge sample
+                    for py in range(max(0, y - 5), min(h, y + height + 5)):
+                        for px in range(max(0, x - 5), min(w, x + width + 5)):
+                            if x <= px < x + width and y <= py < y + height:
+                                # Distance to edge sample
+                                dist = np.sqrt((px - edge_x) ** 2 + (py - edge_y) ** 2)
+                                
+                                # Blend factor based on distance (closer = more influence)
+                                if dist < min(width, height) / 2:
+                                    blend_factor = max(0, 1 - (dist / (min(width, height) / 2))) * 0.3
+                                    
+                                    # Blend the color
+                                    for c in range(3):
+                                        current_val = replacement[py, px, c]
+                                        edge_val = edge_color[c]
+                                        replacement[py, px, c] = int(current_val * (1 - blend_factor) + edge_val * blend_factor)
+            
+            # Apply the replacement with smooth blending
+            for c in range(3):
+                image[:, :, c] = (image[:, :, c] * (1 - blurred_mask) + 
+                                replacement[:, :, c] * blurred_mask).astype(np.uint8)
+            
+        except Exception as e:
+            logger.warning(f"Error in blended rectangle drawing: {e}, falling back to simple rectangle")
+            cv2.rectangle(image, (x, y), (x + width, y + height), background_color, -1)
+
+    def _sample_edge_colors(self, image: np.ndarray, x: int, y: int, width: int, height: int) -> List[Tuple[int, int, Tuple[int, int, int]]]:
+        """
+        Sample colors from the edges of the rectangle for gradient blending.
+        
+        Args:
+            image (np.ndarray): Input image
+            x, y, width, height: Rectangle coordinates
+            
+        Returns:
+            List of (edge_x, edge_y, color) tuples
+        """
+        edge_samples = []
+        h, w = image.shape[:2]
+        
+        try:
+            # Sample from top edge
+            if y > 0:
+                for i in range(0, width, max(1, width // 5)):
+                    edge_x = x + i
+                    edge_y = y - 1
+                    if 0 <= edge_x < w and 0 <= edge_y < h:
+                        color = tuple(map(int, image[edge_y, edge_x]))
+                        edge_samples.append((edge_x, edge_y, color))
+            
+            # Sample from bottom edge
+            if y + height < h:
+                for i in range(0, width, max(1, width // 5)):
+                    edge_x = x + i
+                    edge_y = y + height
+                    if 0 <= edge_x < w and 0 <= edge_y < h:
+                        color = tuple(map(int, image[edge_y, edge_x]))
+                        edge_samples.append((edge_x, edge_y, color))
+            
+            # Sample from left edge
+            if x > 0:
+                for i in range(0, height, max(1, height // 5)):
+                    edge_x = x - 1
+                    edge_y = y + i
+                    if 0 <= edge_x < w and 0 <= edge_y < h:
+                        color = tuple(map(int, image[edge_y, edge_x]))
+                        edge_samples.append((edge_x, edge_y, color))
+            
+            # Sample from right edge
+            if x + width < w:
+                for i in range(0, height, max(1, height // 5)):
+                    edge_x = x + width
+                    edge_y = y + i
+                    if 0 <= edge_x < w and 0 <= edge_y < h:
+                        color = tuple(map(int, image[edge_y, edge_x]))
+                        edge_samples.append((edge_x, edge_y, color))
+        
+        except Exception as e:
+            logger.warning(f"Error sampling edge colors: {e}")
+        
+        return edge_samples
     
     def replace_text_at_location(self, image_path: str, original_text: str, masked_text: str, 
                                 bbox: Tuple[int, int, int, int], output_path: str) -> bool:
@@ -353,8 +571,8 @@ class AadhaarImageMasker:
             # Get the background color (average color of surrounding area)
             background_color = self._get_background_color(image, x, y, width, height)
             
-            # Cover the original text with background color
-            cv2.rectangle(image, (x, y), (x + width, y + height), background_color, -1)
+            # Create a smooth background rectangle with blending
+            self._draw_blended_rectangle(image, x, y, width, height, background_color)
             
             # Calculate appropriate font size based on the bounding box
             font_scale = self._calculate_font_scale(masked_text, width, height)
@@ -422,8 +640,8 @@ class AadhaarImageMasker:
                 # Get the background color (average color of surrounding area)
                 background_color = self._get_background_color(image, x, y, width, height)
                 
-                # Cover the original text with background color
-                cv2.rectangle(image, (x, y), (x + width, y + height), background_color, -1)
+                # Create a smooth background rectangle with blending
+                self._draw_blended_rectangle(image, x, y, width, height, background_color)
                 
                 # Calculate appropriate font size based on the bounding box
                 font_scale = self._calculate_font_scale(masked_text, width, height)

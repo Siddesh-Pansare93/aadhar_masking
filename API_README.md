@@ -7,7 +7,7 @@ A FastAPI-based web service for detecting and masking Aadhaar numbers in images.
 - **Single Image Processing**: Process one image at a time
 - **Bulk Image Processing**: Process up to 10 images simultaneously
 - **Automatic UID Detection**: Uses OCR to detect Aadhaar numbers
-- **Smart Masking**: Masks first 4 digits while preserving document layout
+- **Smart Masking**: Masks first 8 digits while preserving document layout
 - **File Management**: Automatic cleanup of processed files
 
 ## Installation
@@ -41,7 +41,7 @@ The API will be available at `http://localhost:8000`
 ```json
 {
   "filename": "example.jpg",
-  "uid_numbers": ["XXXX 5678 9012"],
+  "uid_numbers": ["XXXX XXXX 9012"],
   "masked_image_url": "http://localhost:8000/static/masked_example.jpg",
   "processing_time": 2.5,
   "locations_found": 2
@@ -76,7 +76,7 @@ curl -X POST "http://localhost:8000/process-image" \
   "results": [
     {
       "filename": "image1.jpg",
-      "uid_numbers": ["XXXX 5678 9012"],
+      "uid_numbers": ["XXXX XXXX 9012"],
       "masked_image_url": "http://localhost:8000/static/masked_image1.jpg",
       "processing_time": 2.1,
       "locations_found": 1
@@ -211,6 +211,6 @@ print(f"Successfully processed: {result['successful_processes']} images")
 
 - Maximum file size is handled by FastAPI defaults
 - Supported image formats: JPEG, PNG, and other common formats
-- The API masks only the first 4 digits of Aadhaar numbers
+- The API masks only the first 8 digits of Aadhaar numbers
 - Processing time varies based on image size and complexity
 - Bulk processing is limited to 10 images per request 

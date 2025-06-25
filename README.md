@@ -1,12 +1,12 @@
 # Aadhaar Masking Project
 
-A Python application that detects Aadhaar numbers from card images using OCR and masks the first 4 digits for privacy protection.
+A Python application that detects Aadhaar numbers from card images using OCR and masks the first 8 digits for privacy protection.
 
 ## 🎯 Project Overview
 
 This project implements a two-step process:
 1. **OCR Detection**: Extract Aadhaar numbers from card images using advanced OCR techniques
-2. **Number Masking**: Replace the first 4 digits with 'X' characters (e.g., "1234 5678 9012" → "XXXX 5678 9012")
+2. **Number Masking**: Replace the first 8 digits with 'X' characters (e.g., "1234 5678 9012" → "XXXX XXXX 9012")
 
 ## 🛠️ Features
 
@@ -128,7 +128,7 @@ LOG_LEVEL=INFO
 
 The masking process converts:
 - **Input**: `1234 5678 9012`
-- **Output**: `XXXX 5678 9012`
+- **Output**: `XXXX XXXX 9012`
 
 ## 📝 Example Output
 
@@ -136,7 +136,7 @@ The masking process converts:
 🔍 Aadhaar Card OCR Detection Started...
 📸 Processing image: sample_data/aadhaar_card.jpg
 ✅ Aadhaar Number Detected: 1234 5678 9012
-🎭 Masked Aadhaar Number: XXXX 5678 9012
+🎭 Masked Aadhaar Number: XXXX XXXX 9012
 💾 Masked image saved: output/masked_aadhaar.jpg
 ```
 

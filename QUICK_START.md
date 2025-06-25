@@ -34,7 +34,7 @@ That's it! 🎉
 - **Drag & Drop** or click to upload images
 - **Real-time processing** with loading indicators
 - **Automatic UID detection** using OCR
-- **Smart masking** of first 4 digits
+- **Smart masking** of first 8 digits
 - **Multiple location detection** in same image
 
 ### 📊 Results Display
@@ -77,7 +77,7 @@ RELOAD=false python run_api.py
 ```json
 {
   "filename": "aadhaar_card.jpg",
-  "uid_numbers": ["XXXX 5678 9012"],
+  "uid_numbers": ["XXXX XXXX 9012"],
   "masked_image_url": "http://localhost:8000/static/masked_image.jpg",
   "processing_time": 2.5,
   "locations_found": 2
@@ -93,7 +93,7 @@ RELOAD=false python run_api.py
   "results": [
     {
       "filename": "image1.jpg",
-      "uid_numbers": ["XXXX 5678 9012"],
+      "uid_numbers": ["XXXX XXXX 9012"],
       "masked_image_url": "http://localhost:8000/static/masked_image1.jpg",
       "processing_time": 2.1,
       "locations_found": 1
