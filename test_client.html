@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhaar UID Masking API Test Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .image-preview {
+            max-width: 300px;
+            max-height: 200px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .api-info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Aadhaar UID Masking API Test Client</h1>
+        
+        <div class="api-info">
+            <strong>API Base URL:</strong> <span id="apiUrl">http://localhost:8000</span>
+            <button onclick="updateApiUrl()">Change URL</button>
+            <br>
+            <strong>Status:</strong> <span id="apiStatus">Checking...</span>
+            <button onclick="checkHealth()">Check Health</button>
+        </div>
+
+        <!-- Single Image Processing -->
+        <div class="section">
+            <h2>📄 Single Image Processing</h2>
+            <p>Upload a single image containing an Aadhaar card to detect and mask the UID.</p>
+            
+            <input type="file" id="singleFile" accept="image/*">
+            <button onclick="processSingleImage()">Process Image</button>
+            
+            <div id="singleResult"></div>
+        </div>
+
+        <!-- Bulk Image Processing -->
+        <div class="section">
+            <h2>📚 Bulk Image Processing</h2>
+            <p>Upload multiple images (up to 10) to process them all at once.</p>
+            
+            <input type="file" id="bulkFiles" accept="image/*" multiple>
+            <button onclick="processBulkImages()">Process All Images</button>
+            
+            <div id="bulkResult"></div>
+        </div>
+
+        <!-- Results Display -->
+        <div class="section">
+            <h2>📊 Processing Results</h2>
+            <div id="resultsDisplay"></div>
+        </div>
+    </div>
+
+    <script>
+        let apiBaseUrl = 'http://localhost:8000';
+
+        // Update API URL
+        function updateApiUrl() {
+            const newUrl = prompt('Enter API Base URL:', apiBaseUrl);
+            if (newUrl) {
+                apiBaseUrl = newUrl.replace(/\/$/, ''); // Remove trailing slash
+                document.getElementById('apiUrl').textContent = apiBaseUrl;
+                checkHealth();
+            }
+        }
+
+        // Check API health
+        async function checkHealth() {
+            const statusElement = document.getElementById('apiStatus');
+            try {
+                statusElement.textContent = 'Checking...';
+                const response = await fetch(`${apiBaseUrl}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    statusElement.textContent = `✅ ${data.status} (${data.timestamp})`;
+                    statusElement.style.color = 'green';
+                } else {
+                    statusElement.textContent = `❌ Error: ${response.status}`;
+                    statusElement.style.color = 'red';
+                }
+            } catch (error) {
+                statusElement.textContent = `❌ Connection failed: ${error.message}`;
+                statusElement.style.color = 'red';
+            }
+        }
+
+        // Show loading state
+        function showLoading(containerId, message = 'Processing...') {
+            document.getElementById(containerId).innerHTML = 
+                `<div class="result loading">⏳ ${message}</div>`;
+        }
+
+        // Show success result
+        function showSuccess(containerId, data) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="result success">
+                    <h4>✅ Success!</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+            
+            // If there are image URLs, display them
+            if (data.masked_image_url) {
+                displayProcessedImage(data.masked_image_url);
+            } else if (data.results && data.results.length > 0) {
+                data.results.forEach(result => {
+                    if (result.masked_image_url) {
+                        displayProcessedImage(result.masked_image_url);
+                    }
+                });
+            }
+        }
+
+        // Show error result
+        function showError(containerId, error) {
+            document.getElementById(containerId).innerHTML = 
+                `<div class="result error">❌ Error: ${error}</div>`;
+        }
+
+        // Display processed image
+        function displayProcessedImage(imageUrl) {
+            const resultsDisplay = document.getElementById('resultsDisplay');
+            const imageDiv = document.createElement('div');
+            imageDiv.innerHTML = `
+                <h4>Processed Image:</h4>
+                <img src="${imageUrl}" class="image-preview" alt="Processed Image">
+                <br>
+                <a href="${imageUrl}" target="_blank">View Full Size</a>
+                <br><br>
+            `;
+            resultsDisplay.appendChild(imageDiv);
+        }
+
+        // Process single image
+        async function processSingleImage() {
+            const fileInput = document.getElementById('singleFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showError('singleResult', 'Please select an image file');
+                return;
+            }
+
+            showLoading('singleResult', 'Processing single image...');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${apiBaseUrl}/process-image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showSuccess('singleResult', data);
+                } else {
+                    const errorData = await response.json();
+                    showError('singleResult', errorData.detail || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showError('singleResult', error.message);
+            }
+        }
+
+        // Process bulk images
+        async function processBulkImages() {
+            const fileInput = document.getElementById('bulkFiles');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                showError('bulkResult', 'Please select one or more image files');
+                return;
+            }
+
+            if (files.length > 10) {
+                showError('bulkResult', 'Maximum 10 files allowed for bulk processing');
+                return;
+            }
+
+            showLoading('bulkResult', `Processing ${files.length} images...`);
+
+            try {
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+
+                const response = await fetch(`${apiBaseUrl}/process-bulk`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showSuccess('bulkResult', data);
+                } else {
+                    const errorData = await response.json();
+                    showError('bulkResult', errorData.detail || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showError('bulkResult', error.message);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkHealth();
+        });
+    </script>
+</body>
+</html> 

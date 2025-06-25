@@ -6,4 +6,8 @@ python-dotenv
 easyocr
 pytesseract
 matplotlib
-regex 
+regex
+fastapi
+uvicorn[standard]
+python-multipart
+aiofiles 
