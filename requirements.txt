@@ -10,4 +10,9 @@ regex
 fastapi
 uvicorn[standard]
 python-multipart
-aiofiles 
+aiofiles
+motor==3.1.1
+pymongo==4.3.3
+cryptography==41.0.0
+pydantic==2.5.0
+passlib==1.7.4 

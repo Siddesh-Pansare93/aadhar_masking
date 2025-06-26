@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AadhaarMask - Secure Aadhaar Masking Solution</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Custom Styles -->
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5; /* indigo-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4338ca; /* indigo-700 */
+        }
+        
+        /* Custom range input styling for the demo slider */
+        input[type=range].accent-indigo-600 {
+            accent-color: #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-white">
+
+<div class="min-h-screen">
+    <!-- Header Section -->
+    <header id="main-header" class="fixed w-full bg-white shadow-sm z-50 transition-all duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-700 to-purple-700 bg-clip-text text-transparent">AadhaarMask</h1>
+            </div>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#features" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 relative group cursor-pointer">
+                    Features
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#how-it-works" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 relative group cursor-pointer">
+                    How It Works
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#security" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 relative group cursor-pointer">
+                    Security
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#demo" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 relative group cursor-pointer">
+                    Demo
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <button class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-lg shadow-md hover:shadow-indigo-500/30 transform hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap cursor-pointer">Get Started</button>
+            </nav>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-700 focus:outline-none cursor-pointer">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-lg absolute w-full">
+            <div class="container mx-auto px-6 py-4 flex flex-col space-y-4">
+                <a href="#features" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 cursor-pointer mobile-nav-link">Features</a>
+                <a href="#how-it-works" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 cursor-pointer mobile-nav-link">How It Works</a>
+                <a href="#security" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 cursor-pointer mobile-nav-link">Security</a>
+                <a href="#demo" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 cursor-pointer mobile-nav-link">Demo</a>
+                <button class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap cursor-pointer">Get Started</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-24 min-h-screen relative overflow-hidden bg-cover bg-center" style="background-image: url('https://readdy.ai/api/search-image?query=abstract%20modern%20gradient%20background%20with%20soft%20blue%20and%20purple%20tones%2C%20minimalist%20design%20with%20subtle%20geometric%20patterns%2C%20professional%20tech%20aesthetic%2C%20clean%20and%20elegant%2C%20perfect%20for%20a%20security%20technology%20website&width=1440&height=800&seq=1&orientation=landscape')">
+        <div class="container mx-auto px-6 py-20 flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-10 md:mb-0 z-10">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-6">
+                    <i class="fas fa-shield-alt mr-2"></i> UIDAI Compliant Solution
+                </div>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 leading-tight">
+                    Secure Aadhaar Masking <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Solution</span>
+                </h1>
+                <p id="typewriter-text" class="mt-6 text-lg text-gray-600 leading-relaxed min-h-[56px]">
+                    Protect your identity with our advanced Aadhaar masking technology. Compliant, secure, and instant.
+                </p>
+                <div class="mt-10 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3.5 rounded-lg shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-1 transition-all duration-300 whitespace-nowrap cursor-pointer flex items-center justify-center">
+                        <span>Get Started Now</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button class="border-2 border-indigo-600 text-indigo-600 px-8 py-3.5 rounded-lg hover:bg-indigo-50 transition-all duration-300 whitespace-nowrap cursor-pointer flex items-center justify-center">
+                        <i class="fas fa-play-circle mr-2"></i>
+                        <span>Watch Demo</span>
+                    </button>
+                </div>
+                <div class="mt-10 flex items-center space-x-4">
+                    <div class="flex -space-x-2">
+                        <img src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20diverse%20business%20person%20with%20neutral%20background%2C%20high%20quality%20portrait%2C%20professional%20looking%2C%20business%20attire&width=50&height=50&seq=2&orientation=squarish" alt="User" class="w-10 h-10 rounded-full border-2 border-white">
+                        <img src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20diverse%20business%20woman%20with%20neutral%20background%2C%20high%20quality%20portrait%2C%20professional%20looking%2C%20business%20attire&width=50&height=50&seq=3&orientation=squarish" alt="User" class="w-10 h-10 rounded-full border-2 border-white">
+                        <img src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20diverse%20business%20man%20with%20neutral%20background%2C%20high%20quality%20portrait%2C%20professional%20looking%2C%20business%20attire&width=50&height=50&seq=4&orientation=squarish" alt="User" class="w-10 h-10 rounded-full border-2 border-white">
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="flex items-center">
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <span class="text-gray-600 ml-1 text-sm font-medium">5.0</span>
+                        </div>
+                        <p class="text-gray-600 text-sm">
+                            <span class="font-bold">1,000+</span> businesses trust our solution
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="md:w-1/2 relative">
+                <div class="absolute -top-20 -right-20 w-64 h-64 bg-indigo-100 rounded-full opacity-70 filter blur-3xl"></div>
+                <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-100 rounded-full opacity-70 filter blur-2xl"></div>
+                <div class="relative z-10 transform hover:scale-105 transition-transform duration-500 hover:rotate-1">
+                    <img src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20an%20Aadhaar%20card%20with%20masked%20sensitive%20information%2C%20digital%20security%20concept%2C%20data%20protection%20visualization%2C%20floating%20digital%20elements%2C%20professional%20tech%20aesthetic%2C%20clean%20design%20on%20transparent%20background&width=600&height=500&seq=5&orientation=landscape" alt="Aadhaar Masking Illustration" class="w-full h-auto object-cover object-top rounded-xl shadow-2xl">
+                    <div class="absolute -bottom-4 -right-4 bg-white rounded-lg shadow-lg p-3 flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-shield-alt text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">UIDAI Certified</p>
+                            <p class="text-sm font-bold text-gray-800">100% Compliant</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                <path fill="#ffffff" fill-opacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,208C1248,192,1344,192,1392,192L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Trusted By Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-8">
+                <p class="text-gray-500 uppercase tracking-wider font-medium text-sm">Trusted by leading organizations</p>
+            </div>
+            <div class="flex flex-wrap justify-center items-center gap-x-12 gap-y-8">
+                <div class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-300">
+                    <i class="fab fa-google text-2xl mr-2"></i>
+                    <span class="font-semibold">Google</span>
+                </div>
+                <div class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-300">
+                    <i class="fab fa-microsoft text-2xl mr-2"></i>
+                    <span class="font-semibold">Microsoft</span>
+                </div>
+                <div class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-300">
+                    <i class="fab fa-amazon text-2xl mr-2"></i>
+                    <span class="font-semibold">Amazon</span>
+                </div>
+                <div class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-300">
+                    <i class="fab fa-apple text-2xl mr-2"></i>
+                    <span class="font-semibold">Apple</span>
+                </div>
+                <div class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-300">
+                    <i class="fab fa-slack text-2xl mr-2"></i>
+                    <span class="font-semibold">Slack</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-star mr-1"></i> Premium Features
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Powerful Features</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Discover why our Aadhaar masking solution stands out from the competition</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Feature 1 -->
+                <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100 group cursor-pointer">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                        <i class="fas fa-shield-alt text-2xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 group-hover:text-indigo-600 transition-colors duration-300">Advanced Masking Technology</h3>
+                    <p class="text-gray-600">Our AI-powered algorithms precisely identify and mask sensitive information on Aadhaar cards with 99.9% accuracy.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100 group cursor-pointer">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                        <i class="fas fa-bolt text-2xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 group-hover:text-indigo-600 transition-colors duration-300">Instant Processing</h3>
+                    <p class="text-gray-600">Process thousands of documents in minutes with our high-performance cloud infrastructure.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100 group cursor-pointer">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                        <i class="fas fa-check-circle text-2xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 group-hover:text-indigo-600 transition-colors duration-300">UIDAI Compliant</h3>
+                    <p class="text-gray-600">Fully compliant with all UIDAI regulations and guidelines for Aadhaar data protection.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100 group cursor-pointer">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                        <i class="fas fa-cogs text-2xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 group-hover:text-indigo-600 transition-colors duration-300">Easy Integration</h3>
+                    <p class="text-gray-600">Seamlessly integrate with your existing systems through our comprehensive API.</p>
+                </div>
+                <!-- Feature 5 -->
+                <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100 group cursor-pointer">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                        <i class="fas fa-chart-line text-2xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 group-hover:text-indigo-600 transition-colors duration-300">Detailed Analytics</h3>
+                    <p class="text-gray-600">Track usage, performance metrics, and compliance reports through an intuitive dashboard.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100 group cursor-pointer">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                        <i class="fas fa-user-shield text-2xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 group-hover:text-indigo-600 transition-colors duration-300">Privacy First</h3>
+                    <p class="text-gray-600">Your data never leaves your secure environment, ensuring maximum privacy and security.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-cogs mr-1"></i> Simple Process
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">How It Works</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Simple and secure process to mask your Aadhaar details in just a few steps</p>
+            </div>
+            <div class="relative">
+                <div class="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-200 via-purple-200 to-indigo-200 transform -translate-x-1/2"></div>
+                <div class="space-y-20 relative">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:pr-12 md:text-right md:w-1/2 mb-8 md:mb-0">
+                            <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100">
+                                <span class="inline-block text-xs font-semibold text-indigo-600 tracking-wider uppercase mb-2">Step 1</span>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Upload Your Document</h3>
+                                <p class="text-gray-600">Simply upload your Aadhaar card through our secure interface or API. We support multiple formats including JPG, PNG, and PDF.</p>
+                            </div>
+                        </div>
+                        <div class="md:w-14 relative flex justify-center">
+                            <div class="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl z-10 shadow-lg">1</div>
+                        </div>
+                        <div class="md:order-2 md:pl-12 md:w-1/2">
+                            <div class="rounded-xl shadow-lg overflow-hidden transform hover:rotate-1 transition-all duration-500 hover:shadow-xl">
+                                <img src="https://readdy.ai/api/search-image?query=person%20uploading%20document%20to%20cloud%20service%2C%20digital%20document%20management%2C%20secure%20file%20upload%20visualization%2C%20professional%20tech%20interface%2C%20clean%20modern%20design&width=600&height=400&seq=6&orientation=landscape" alt="Upload Your Document" class="w-full h-auto object-cover object-top">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:order-2 md:pl-12 md:w-1/2 mb-8 md:mb-0">
+                            <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100">
+                                <span class="inline-block text-xs font-semibold text-indigo-600 tracking-wider uppercase mb-2">Step 2</span>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Automatic Detection</h3>
+                                <p class="text-gray-600">Our AI instantly identifies sensitive information areas on the Aadhaar card that need to be masked according to compliance requirements.</p>
+                            </div>
+                        </div>
+                        <div class="md:w-14 relative flex justify-center">
+                            <div class="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl z-10 shadow-lg">2</div>
+                        </div>
+                        <div class="md:pr-12 md:w-1/2">
+                            <div class="rounded-xl shadow-lg overflow-hidden transform hover:-rotate-1 transition-all duration-500 hover:shadow-xl">
+                                <img src="https://readdy.ai/api/search-image?query=AI%20scanning%20document%20and%20identifying%20sensitive%20information%2C%20digital%20security%20analysis%2C%20data%20detection%20visualization%2C%20professional%20tech%20interface%2C%20clean%20modern%20design&width=600&height=400&seq=7&orientation=landscape" alt="Automatic Detection" class="w-full h-auto object-cover object-top">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:pr-12 md:text-right md:w-1/2 mb-8 md:mb-0">
+                            <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100">
+                                <span class="inline-block text-xs font-semibold text-indigo-600 tracking-wider uppercase mb-2">Step 3</span>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Secure Masking</h3>
+                                <p class="text-gray-600">The system applies appropriate masking techniques to protect sensitive data while maintaining document integrity and readability.</p>
+                            </div>
+                        </div>
+                        <div class="md:w-14 relative flex justify-center">
+                            <div class="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl z-10 shadow-lg">3</div>
+                        </div>
+                        <div class="md:order-2 md:pl-12 md:w-1/2">
+                            <div class="rounded-xl shadow-lg overflow-hidden transform hover:rotate-1 transition-all duration-500 hover:shadow-xl">
+                                <img src="https://readdy.ai/api/search-image?query=document%20with%20sections%20being%20masked%20and%20secured%2C%20digital%20redaction%20process%2C%20data%20protection%20visualization%2C%20professional%20tech%20interface%2C%20clean%20modern%20design&width=600&height=400&seq=8&orientation=landscape" alt="Secure Masking" class="w-full h-auto object-cover object-top">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:order-2 md:pl-12 md:w-1/2 mb-8 md:mb-0">
+                            <div class="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl border border-gray-100">
+                                <span class="inline-block text-xs font-semibold text-indigo-600 tracking-wider uppercase mb-2">Step 4</span>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Download & Verification</h3>
+                                <p class="text-gray-600">Download your masked Aadhaar document instantly. Our system also provides verification to ensure all sensitive data has been properly secured.</p>
+                            </div>
+                        </div>
+                        <div class="md:w-14 relative flex justify-center">
+                            <div class="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl z-10 shadow-lg">4</div>
+                        </div>
+                        <div class="md:pr-12 md:w-1/2">
+                            <div class="rounded-xl shadow-lg overflow-hidden transform hover:-rotate-1 transition-all duration-500 hover:shadow-xl">
+                                <img src="https://readdy.ai/api/search-image?query=person%20downloading%20secure%20document%20with%20verification%20checkmark%2C%20completed%20digital%20security%20process%2C%20successful%20data%20protection%2C%20professional%20tech%20interface%2C%20clean%20modern%20design&width=600&height=400&seq=9&orientation=landscape" alt="Download & Verification" class="w-full h-auto object-cover object-top">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Section -->
+    <section id="security" class="py-20 bg-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-1/3 h-full opacity-10">
+            <img src="https://readdy.ai/api/search-image?query=abstract%20security%20pattern%20with%20shield%20icons%2C%20digital%20lock%20symbols%2C%20and%20encryption%20visualization%2C%20subtle%20tech%20background%2C%20professional%20security%20aesthetic%2C%20light%20color%20scheme&width=600&height=1024&seq=10&orientation=portrait" alt="Security Pattern" class="w-full h-full object-cover object-top">
+        </div>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-16">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-lock mr-1"></i> Maximum Protection
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Enterprise-Grade Security</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Your data protection is our top priority with industry-leading security measures</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <span class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-shield-alt text-indigo-600"></i>
+                        </span>
+                        Security Features
+                    </h3>
+                    <div class="space-y-6">
+                        <!-- Security Feature 1 -->
+                        <div class="flex items-start hover:bg-gray-50 p-3 rounded-lg transition-colors duration-300">
+                            <div class="mt-1 bg-green-100 rounded-full p-2 mr-4">
+                                <i class="fas fa-shield-alt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-1">End-to-End Encryption</h4>
+                                <p class="text-gray-600">All data is encrypted during transit and at rest using AES-256 encryption.</p>
+                            </div>
+                        </div>
+                        <!-- Security Feature 2 -->
+                        <div class="flex items-start hover:bg-gray-50 p-3 rounded-lg transition-colors duration-300">
+                            <div class="mt-1 bg-green-100 rounded-full p-2 mr-4">
+                                <i class="fas fa-shield-alt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-1">Zero Data Storage</h4>
+                                <p class="text-gray-600">We process your documents in real-time and never store sensitive information on our servers.</p>
+                            </div>
+                        </div>
+                        <!-- Security Feature 3 -->
+                        <div class="flex items-start hover:bg-gray-50 p-3 rounded-lg transition-colors duration-300">
+                            <div class="mt-1 bg-green-100 rounded-full p-2 mr-4">
+                                <i class="fas fa-shield-alt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-1">Access Controls</h4>
+                                <p class="text-gray-600">Granular permission settings allow you to control who can access your masked documents.</p>
+                            </div>
+                        </div>
+                        <!-- Security Feature 4 -->
+                        <div class="flex items-start hover:bg-gray-50 p-3 rounded-lg transition-colors duration-300">
+                            <div class="mt-1 bg-green-100 rounded-full p-2 mr-4">
+                                <i class="fas fa-shield-alt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-1">Audit Trails</h4>
+                                <p class="text-gray-600">Comprehensive logs of all masking activities for compliance and security verification.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-lg p-8 flex flex-col justify-center border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <div class="mb-8 text-center">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2 flex items-center justify-center">
+                            <span class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-certificate text-indigo-600"></i>
+                            </span>
+                            Certifications & Compliance
+                        </h3>
+                        <p class="text-gray-600">Meeting the highest industry standards</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Certification 1 -->
+                        <div class="bg-white rounded-lg p-4 shadow flex flex-col items-center justify-center text-center transform hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-100">
+                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-lock text-xl text-indigo-600"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">ISO 27001</h4>
+                            <p class="text-sm text-gray-600">Information Security</p>
+                        </div>
+                        <!-- Certification 2 -->
+                        <div class="bg-white rounded-lg p-4 shadow flex flex-col items-center justify-center text-center transform hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-100">
+                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-cloud text-xl text-indigo-600"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">SOC 2 Type II</h4>
+                            <p class="text-sm text-gray-600">Service Organization Control</p>
+                        </div>
+                        <!-- Certification 3 -->
+                        <div class="bg-white rounded-lg p-4 shadow flex flex-col items-center justify-center text-center transform hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-100">
+                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-shield-alt text-xl text-indigo-600"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">GDPR Compliant</h4>
+                            <p class="text-sm text-gray-600">Data Protection</p>
+                        </div>
+                        <!-- Certification 4 -->
+                        <div class="bg-white rounded-lg p-4 shadow flex flex-col items-center justify-center text-center transform hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-100">
+                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-check-double text-xl text-indigo-600"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">UIDAI Certified</h4>
+                            <p class="text-sm text-gray-600">Aadhaar Data Handling</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-play-circle mr-1"></i> Live Demo
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">See It In Action</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Experience our Aadhaar masking solution firsthand with our interactive demo</p>
+            </div>
+            <div class="flex flex-col lg:flex-row items-center gap-10">
+                <div class="lg:w-1/2">
+                    <div class="bg-white rounded-xl shadow-lg p-8 relative overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+                        <div id="demo-slider-container" class="relative h-80 rounded-lg overflow-hidden select-none">
+                            <!-- Base Image (Before) -->
+                            <div class="absolute inset-0 w-full h-full">
+                                <img src="https://readdy.ai/api/search-image?query=Aadhaar%20card%20with%20sensitive%20information%20visible%2C%20clear%20ID%20card%20with%20personal%20details%2C%20high%20quality%20realistic%20document%20on%20clean%20background&width=600&height=400&seq=11&orientation=landscape" alt="Before Masking" class="w-full h-full object-cover object-top">
+                            </div>
+                            <!-- Clipped Image (After) -->
+                            <div id="demo-clipped-image" class="absolute inset-0 w-full h-full" style="clip-path: inset(0 50% 0 0);">
+                                <img src="https://readdy.ai/api/search-image?query=Aadhaar%20card%20with%20masked%20and%20blurred%20sensitive%20information%2C%20secure%20ID%20card%20with%20protected%20personal%20details%2C%20high%20quality%20realistic%20document%20on%20clean%20background&width=600&height=400&seq=12&orientation=landscape" alt="After Masking" class="w-full h-full object-cover object-top">
+                            </div>
+                            <!-- Slider Handle -->
+                            <div id="demo-slider-handle" class="absolute top-1/2 w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-lg transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer" style="left: 50%;">
+                                <i class="fas fa-arrows-alt-h text-white"></i>
+                            </div>
+                            <div class="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">Before</div>
+                            <div class="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">After</div>
+                        </div>
+                        <div class="mt-6 flex justify-between items-center">
+                            <span class="text-gray-600 text-sm font-medium">Drag slider to compare</span>
+                            <input id="demo-slider-range" type="range" min="1" max="99" value="50" class="w-1/2 accent-indigo-600">
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2 mt-10 lg:mt-0">
+                    <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                            <span class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-upload text-indigo-600"></i>
+                            </span>
+                            Try It Yourself
+                        </h3>
+                        <div id="file-drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors duration-300 cursor-pointer bg-gray-50 hover:bg-indigo-50">
+                            <input type="file" id="file-input" class="hidden" accept="image/*">
+                            <i class="fas fa-cloud-upload-alt text-5xl text-indigo-400 mb-4"></i>
+                            <h4 class="text-lg font-bold text-gray-700 mb-2">Upload Aadhaar Image</h4>
+                            <p class="text-gray-600 mb-4">Drag and drop your file here or click to browse</p>
+                            <p class="text-sm text-gray-500">Supported formats: JPG, PNG, PDF (Max size: 5MB)</p>
+                        </div>
+                        <div id="upload-progress-container" class="mt-6 hidden">
+                            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                <span>Uploading...</span>
+                                <span id="upload-progress-text">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                <div id="upload-progress-bar" class="bg-gradient-to-r from-indigo-600 to-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div id="upload-complete-container" class="mt-6 bg-green-50 rounded-lg p-4 flex items-center border border-green-100 hidden">
+                            <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
+                            <div>
+                                <h4 class="font-bold text-green-800">Processing Complete!</h4>
+                                <p class="text-green-700 text-sm">Your masked Aadhaar is ready for download</p>
+                            </div>
+                            <button class="ml-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 whitespace-nowrap cursor-pointer flex items-center">
+                                <i class="fas fa-download mr-2"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">10M+</div>
+                    <div class="text-gray-600 mt-2 font-medium">Documents Processed</div>
+                </div>
+                <div class="text-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">99.9%</div>
+                    <div class="text-gray-600 mt-2 font-medium">Accuracy Rate</div>
+                </div>
+                <div class="text-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">5000+</div>
+                    <div class="text-gray-600 mt-2 font-medium">Business Clients</div>
+                </div>
+                <div class="text-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">24/7</div>
+                    <div class="text-gray-600 mt-2 font-medium">Customer Support</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-quote-left mr-1"></i> Testimonials
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">What Our Clients Say</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Hear from businesses that have transformed their Aadhaar handling process</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
+                    <div class="flex items-center mb-6">
+                        <div class="flex text-yellow-400 mb-2">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6 flex-grow">"AadhaarMask has revolutionized how we handle customer KYC. The masking process is seamless, secure, and fully compliant with regulations. Highly recommended!"</p>
+                    <div class="flex items-center">
+                        <img src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20business%20executive%2C%20high%20quality%20portrait%2C%20professional%20looking%2C%20business%20attire%2C%20neutral%20background&width=60&height=60&seq=14&orientation=squarish" alt="Client" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Rajesh Kumar</h4>
+                            <p class="text-gray-500 text-sm">CTO, TechSolutions Inc.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
+                    <div class="flex items-center mb-6">
+                        <div class="flex text-yellow-400 mb-2">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6 flex-grow">"The API integration was incredibly smooth. We've processed over 50,000 documents without a single compliance issue. The support team is also very responsive."</p>
+                    <div class="flex items-center">
+                        <img src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20business%20woman%20executive%2C%20high%20quality%20portrait%2C%20professional%20looking%2C%20business%20attire%2C%20neutral%20background&width=60&height=60&seq=15&orientation=squarish" alt="Client" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Priya Sharma</h4>
+                            <p class="text-gray-500 text-sm">Head of Operations, FinSecure</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
+                    <div class="flex items-center mb-6">
+                        <div class="flex text-yellow-400 mb-2">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6 flex-grow">"As a compliance officer, I appreciate the detailed audit logs and the robust security measures. AadhaarMask has made our regulatory reporting much easier."</p>
+                    <div class="flex items-center">
+                        <img src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20business%20man%20executive%2C%20high%20quality%20portrait%2C%20professional%20looking%2C%20business%20attire%2C%20neutral%20background&width=60&height=60&seq=16&orientation=squarish" alt="Client" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Vikram Singh</h4>
+                            <p class="text-gray-500 text-sm">Compliance Manager, BankSecure</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call-to-Action Section -->
+    <section class="py-20 bg-gradient-to-r from-indigo-600 to-purple-600 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-10">
+            <img src="https://readdy.ai/api/search-image?query=abstract%20geometric%20pattern%20with%20connected%20dots%20and%20lines%2C%20network%20visualization%2C%20digital%20technology%20concept%2C%20subtle%20tech%20background%2C%20light%20color%20scheme%20on%20transparent%20background&width=1440&height=600&seq=13&orientation=landscape" alt="Background Pattern" class="w-full h-full object-cover object-top">
+        </div>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="max-w-3xl mx-auto text-center text-white">
+                <div class="inline-block px-3 py-1 bg-white bg-opacity-20 text-white rounded-full text-sm font-semibold mb-6">
+                    <i class="fas fa-rocket mr-1"></i> Get Started Today
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to Secure Your Aadhaar Documents?</h2>
+                <p class="text-xl mb-10 opacity-90">Join thousands of businesses and individuals who trust our solution for compliant Aadhaar masking</p>
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    <button class="bg-white text-indigo-600 px-8 py-3.5 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 font-bold whitespace-nowrap cursor-pointer flex items-center justify-center">
+                        <i class="fas fa-play mr-2"></i>
+                        <span>Start Free Trial</span>
+                    </button>
+                    <button class="border-2 border-white text-white px-8 py-3.5 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-300 whitespace-nowrap cursor-pointer flex items-center justify-center">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        <span>Schedule Demo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-question-circle mr-1"></i> FAQ
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Frequently Asked Questions</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Find answers to common questions about our Aadhaar masking solution</p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <!-- FAQ Item 1 -->
+                <div class="faq-item mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-question w-full flex justify-between items-center p-6 text-left bg-white hover:bg-gray-50 transition-colors duration-300 cursor-pointer border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-800">What is Aadhaar masking and why is it important?</h3>
+                        <i class="fas fa-chevron-up text-indigo-600 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-answer p-6 bg-gray-50">
+                        <p class="text-gray-600">Aadhaar masking is the process of hiding sensitive personal information on Aadhaar cards to protect privacy while still allowing for verification. It's important for compliance with UIDAI regulations and to prevent identity theft.</p>
+                    </div>
+                </div>
+                <!-- FAQ Item 2 -->
+                <div class="faq-item mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-question w-full flex justify-between items-center p-6 text-left bg-white hover:bg-gray-50 transition-colors duration-300 cursor-pointer">
+                        <h3 class="text-lg font-bold text-gray-800">How secure is your masking solution?</h3>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-answer p-6 bg-gray-50 hidden">
+                        <p class="text-gray-600">Our solution uses enterprise-grade security with end-to-end encryption, zero data storage policy, and is compliant with ISO 27001 and SOC 2 Type II standards. All processing happens in secure environments with comprehensive audit trails.</p>
+                    </div>
+                </div>
+                <!-- FAQ Item 3 -->
+                <div class="faq-item mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-question w-full flex justify-between items-center p-6 text-left bg-white hover:bg-gray-50 transition-colors duration-300 cursor-pointer">
+                        <h3 class="text-lg font-bold text-gray-800">Can I integrate AadhaarMask with my existing systems?</h3>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-answer p-6 bg-gray-50 hidden">
+                        <p class="text-gray-600">Yes, we offer comprehensive API documentation and SDKs for seamless integration with your existing systems. Our team also provides technical support throughout the integration process.</p>
+                    </div>
+                </div>
+                <!-- FAQ Item 4 -->
+                <div class="faq-item mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-question w-full flex justify-between items-center p-6 text-left bg-white hover:bg-gray-50 transition-colors duration-300 cursor-pointer">
+                        <h3 class="text-lg font-bold text-gray-800">What file formats do you support?</h3>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-answer p-6 bg-gray-50 hidden">
+                        <p class="text-gray-600">We support all major image formats including JPG, PNG, TIFF, as well as PDF documents. Our system can process both scanned documents and digital copies of Aadhaar cards.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
+                <div>
+                    <h3 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-6">AadhaarMask</h3>
+                    <p class="text-gray-400 mb-6">Secure, compliant, and efficient Aadhaar masking solution for businesses and individuals.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-indigo-600 transition-all duration-300 cursor-pointer"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-indigo-600 transition-all duration-300 cursor-pointer"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-indigo-600 transition-all duration-300 cursor-pointer"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-indigo-600 transition-all duration-300 cursor-pointer"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6 text-white">Quick Links</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-chevron-right text-xs mr-2"></i> Home</a></li>
+                        <li><a href="#features" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-chevron-right text-xs mr-2"></i> Features</a></li>
+                        <li><a href="#how-it-works" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-chevron-right text-xs mr-2"></i> How It Works</a></li>
+                        <li><a href="#security" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-chevron-right text-xs mr-2"></i> Security</a></li>
+                        <li><a href="#demo" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-chevron-right text-xs mr-2"></i> Demo</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6 text-white">Resources</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-file-alt text-xs mr-2"></i> Documentation</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-code text-xs mr-2"></i> API Reference</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-rss text-xs mr-2"></i> Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-headset text-xs mr-2"></i> Support</a></li>
+                        <li><a href="#faq" class="text-gray-400 hover:text-indigo-400 transition-colors duration-300 flex items-center cursor-pointer"><i class="fas fa-question-circle text-xs mr-2"></i> FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6 text-white">Subscribe</h4>
+                    <p class="text-gray-400 mb-4">Stay updated with our latest features</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Your email" class="bg-gray-800 text-white px-4 py-3 rounded-l-lg focus:outline-none border-none w-full">
+                        <button class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-r-lg hover:shadow-lg transition-colors duration-300 whitespace-nowrap cursor-pointer">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 AadhaarMask. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors duration-300 cursor-pointer">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors duration-300 cursor-pointer">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button id="scroll-to-top" class="fixed bottom-6 right-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:shadow-indigo-500/50 transition-all duration-300 cursor-pointer opacity-0 pointer-events-none">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Header & Mobile Menu ---
+    const mainHeader = document.getElementById('main-header');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+    const scrollToTopButton = document.getElementById('scroll-to-top');
+
+    // Toggle mobile menu
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // Close mobile menu when a link is clicked
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+        });
+    });
+    
+    // Handle scroll effects
+    window.addEventListener('scroll', () => {
+        // Sticky header styling
+        if (window.scrollY > 50) {
+            mainHeader.classList.add('bg-opacity-95', 'backdrop-blur-sm', 'shadow-md');
+        } else {
+            mainHeader.classList.remove('bg-opacity-95', 'backdrop-blur-sm', 'shadow-md');
+        }
+
+        // Show/hide scroll to top button
+        if (window.scrollY > 500) {
+            scrollToTopButton.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+            scrollToTopButton.classList.add('opacity-0', 'pointer-events-none');
+        }
+    });
+
+    // Scroll to top functionality
+    scrollToTopButton.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+
+    // --- Typewriter Effect ---
+    const typewriterElement = document.getElementById('typewriter-text');
+    if (typewriterElement) {
+        const text = typewriterElement.textContent.trim();
+        typewriterElement.textContent = '';
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < text.length) {
+                typewriterElement.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 50);
+    }
+    
+
+    // --- Demo Slider ---
+    const sliderContainer = document.getElementById('demo-slider-container');
+    const clippedImage = document.getElementById('demo-clipped-image');
+    const sliderHandle = document.getElementById('demo-slider-handle');
+    const sliderRange = document.getElementById('demo-slider-range');
+    let isDragging = false;
+
+    const updateSliderPosition = (xPosition) => {
+        const rect = sliderContainer.getBoundingClientRect();
+        let position = ((xPosition - rect.left) / rect.width) * 100;
+        position = Math.max(0, Math.min(100, position));
+
+        clippedImage.style.clipPath = `inset(0 ${100 - position}% 0 0)`;
+        sliderHandle.style.left = `${position}%`;
+        sliderRange.value = position;
+    };
+
+    sliderHandle.addEventListener('mousedown', () => { isDragging = true; });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            updateSliderPosition(e.clientX);
+        }
+    });
+
+    // Touch events
+    sliderHandle.addEventListener('touchstart', () => { isDragging = true; });
+    window.addEventListener('touchend', () => { isDragging = false; });
+    window.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            updateSliderPosition(e.touches[0].clientX);
+        }
+    });
+
+    // Range input control
+    sliderRange.addEventListener('input', (e) => {
+        const position = e.target.value;
+        clippedImage.style.clipPath = `inset(0 ${100 - position}% 0 0)`;
+        sliderHandle.style.left = `${position}%`;
+    });
+
+
+    // --- File Upload Simulation ---
+    const fileDropArea = document.getElementById('file-drop-area');
+    const fileInput = document.getElementById('file-input');
+    const progressContainer = document.getElementById('upload-progress-container');
+    const progressBar = document.getElementById('upload-progress-bar');
+    const progressText = document.getElementById('upload-progress-text');
+    const completeContainer = document.getElementById('upload-complete-container');
+
+    const simulateUpload = () => {
+        let progress = 0;
+        progressContainer.classList.remove('hidden');
+        completeContainer.classList.add('hidden');
+        
+        const interval = setInterval(() => {
+            progress += 5;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+            
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    completeContainer.classList.remove('hidden');
+                }, 500);
+            }
+        }, 100);
+    };
+
+    fileDropArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) simulateUpload();
+    });
+    
+    // Drag and drop
+    fileDropArea.addEventListener('dragover', (e) => e.preventDefault());
+    fileDropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            simulateUpload();
+        }
+    });
+
+
+    // --- FAQ Accordion ---
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach((item, index) => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const icon = item.querySelector('i');
+
+        question.addEventListener('click', () => {
+            const isOpen = !answer.classList.contains('hidden');
+
+            // Close all other items
+            faqItems.forEach(otherItem => {
+                otherItem.querySelector('.faq-answer').classList.add('hidden');
+                otherItem.querySelector('button').classList.remove('border-b', 'border-gray-200');
+                const otherIcon = otherItem.querySelector('i');
+                otherIcon.classList.remove('fa-chevron-up', 'text-indigo-600');
+                otherIcon.classList.add('fa-chevron-down', 'text-gray-400');
+            });
+
+            // Toggle the clicked item
+            if (!isOpen) {
+                answer.classList.remove('hidden');
+                question.classList.add('border-b', 'border-gray-200');
+                icon.classList.remove('fa-chevron-down', 'text-gray-400');
+                icon.classList.add('fa-chevron-up', 'text-indigo-600');
+            }
+        });
+    });
+
+});
+</script>
+
+</body>
+</html>
