@@ -1,9 +1,35 @@
 """Enhanced data models for the Aadhaar UID Masking API."""
 
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Annotated
 from pydantic import BaseModel, Field, validator
 from bson import ObjectId
+from pydantic_core import core_schema
+from datetime import datetime
+
+
+
+class _ObjectIdAnnotation:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, _source, handler):
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.str_schema(),
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(ObjectId),
+                    core_schema.chain_schema([
+                        core_schema.str_schema(),
+                        core_schema.no_info_plain_validator_function(lambda v: ObjectId(v) if ObjectId.is_valid(v) else (_ for _ in ()).throw(ValueError("Invalid ObjectId")))
+                    ])
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+
+
+
+
 
 class ProcessResult(BaseModel):
     """Response model for single image processing results."""
@@ -31,3 +57,21 @@ class RecordListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int 
+
+
+class EntityResponse(BaseModel) :
+    name : str = Field(...)
+    apiKeys : List[Annotated[ObjectId, _ObjectIdAnnotation]] 
+    has_access : bool = Field(...)
+
+class ApiResponse(BaseModel) : 
+    total_req : List[Annotated[ObjectId, _ObjectIdAnnotation]]
+    
+
+class ReqResponse : 
+    process_time : float  = Field(... )
+    success : bool = Field(...)
+    req_date  = datetime.date = Field(...)
+    req_time  = datetime.time = Field(...)
+
+
