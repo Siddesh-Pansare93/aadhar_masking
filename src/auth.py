@@ -21,7 +21,7 @@ security = HTTPBasic()
 
 # Admin credentials (in production, these should be from environment variables)
 ADMIN_USERNAME = "admin123"
-ADMIN_PASSWORD = "admin123@/src"
+ADMIN_PASSWORD = "admin123"
 
 async def get_api_key_from_header(x_api_key: Optional[str] = Header(None)) -> Optional[str]:
     """

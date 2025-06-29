@@ -296,7 +296,12 @@ class APIKeyManager:
             bool: Success status
         """
         try:
-            object_id = ObjectId(api_key_id)
+            # Validate ObjectId format
+            try:
+                object_id = ObjectId(api_key_id)
+            except Exception as e:
+                logger.error(f"Invalid ObjectId format for API key {api_key_id}: {e}")
+                return False
             
             result = await self.db.db.api_keys.update_one(
                 {"_id": object_id},
@@ -306,11 +311,48 @@ class APIKeyManager:
             success = result.modified_count > 0
             if success:
                 logger.info(f"Deactivated API key: {api_key_id}")
+            else:
+                logger.warning(f"API key not found or already deactivated: {api_key_id}")
             
             return success
             
         except Exception as e:
             logger.error(f"Failed to deactivate API key {api_key_id}: {e}")
+            return False
+    
+    async def reactivate_api_key(self, api_key_id: str) -> bool:
+        """
+        Reactivate an API key.
+        
+        Args:
+            api_key_id: API key ID to reactivate
+            
+        Returns:
+            bool: Success status
+        """
+        try:
+            # Validate ObjectId format
+            try:
+                object_id = ObjectId(api_key_id)
+            except Exception as e:
+                logger.error(f"Invalid ObjectId format for API key {api_key_id}: {e}")
+                return False
+            
+            result = await self.db.db.api_keys.update_one(
+                {"_id": object_id},
+                {"$set": {"is_active": True}}
+            )
+            
+            success = result.modified_count > 0
+            if success:
+                logger.info(f"Reactivated API key: {api_key_id}")
+            else:
+                logger.warning(f"API key not found: {api_key_id}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Failed to reactivate API key {api_key_id}: {e}")
             return False
     
     async def get_system_analytics(self) -> Dict[str, Any]:

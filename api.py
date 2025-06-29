@@ -696,17 +696,62 @@ async def deactivate_api_key(
 ):
     """Deactivate an API key."""
     try:
+        logger.info(f"Attempting to deactivate API key: {api_key_id}")
+        
+        # Validate API key ID format
+        if not api_key_id:
+            logger.error("Empty API key ID provided")
+            raise HTTPException(status_code=400, detail="API key ID cannot be empty")
+        
+        # Auto-convert if they provided the actual API key instead of ID
+        if len(api_key_id) == 64:
+            logger.info("64-character API key provided, converting to API key ID")
+            # Look up the API key ID from the actual API key
+            key_hash = api_key_manager._hash_api_key(api_key_id)
+            api_key_doc = await db_manager.db.api_keys.find_one({"key_hash": key_hash})
+            
+            if not api_key_doc:
+                raise HTTPException(
+                    status_code=404, 
+                    detail="API key not found in database. Please check the API key value."
+                )
+            
+            # Convert to the correct ID format
+            api_key_id = str(api_key_doc["_id"])
+            logger.info(f"Converted to API key ID: {api_key_id}")
+            
+        elif len(api_key_id) != 24:
+            logger.error(f"Invalid API key ID format: {api_key_id} (length: {len(api_key_id)})")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid format. Expected either:\n- API key ID (24 characters): Use the 'id' field from API key creation\n- API key (64 characters): Use the 'api_key' field from API key creation\nYou provided {len(api_key_id)} characters."
+            )
+        
+        # Additional validation to ensure it's a valid ObjectId format
+        try:
+            from bson import ObjectId
+            ObjectId(api_key_id)
+        except Exception as e:
+            logger.error(f"Invalid ObjectId format: {api_key_id} - {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid API key ID format. Must be a valid MongoDB ObjectId (24-character hex string)."
+            )
+        
         success = await api_key_manager.deactivate_api_key(api_key_id)
         
         if not success:
+            logger.error(f"API key not found for deactivation: {api_key_id}")
             raise HTTPException(status_code=404, detail="API key not found")
         
+        logger.info(f"Successfully deactivated API key: {api_key_id}")
         return {"message": f"API key {api_key_id} deactivated successfully"}
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected error deactivating API key {api_key_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 @app.post("/admin/api-keys/{api_key_id}/activate")
 async def activate_api_key(
@@ -715,17 +760,62 @@ async def activate_api_key(
 ):
     """Reactivate an API key."""
     try:
+        logger.info(f"Attempting to activate API key: {api_key_id}")
+        
+        # Validate API key ID format
+        if not api_key_id:
+            logger.error("Empty API key ID provided")
+            raise HTTPException(status_code=400, detail="API key ID cannot be empty")
+        
+        # Auto-convert if they provided the actual API key instead of ID
+        if len(api_key_id) == 64:
+            logger.info("64-character API key provided, converting to API key ID")
+            # Look up the API key ID from the actual API key
+            key_hash = api_key_manager._hash_api_key(api_key_id)
+            api_key_doc = await db_manager.db.api_keys.find_one({"key_hash": key_hash})
+            
+            if not api_key_doc:
+                raise HTTPException(
+                    status_code=404, 
+                    detail="API key not found in database. Please check the API key value."
+                )
+            
+            # Convert to the correct ID format
+            api_key_id = str(api_key_doc["_id"])
+            logger.info(f"Converted to API key ID: {api_key_id}")
+            
+        elif len(api_key_id) != 24:
+            logger.error(f"Invalid API key ID format: {api_key_id} (length: {len(api_key_id)})")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid format. Expected either:\n- API key ID (24 characters): Use the 'id' field from API key creation\n- API key (64 characters): Use the 'api_key' field from API key creation\nYou provided {len(api_key_id)} characters."
+            )
+        
+        # Additional validation to ensure it's a valid ObjectId format
+        try:
+            from bson import ObjectId
+            ObjectId(api_key_id)
+        except Exception as e:
+            logger.error(f"Invalid ObjectId format: {api_key_id} - {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid API key ID format. Must be a valid MongoDB ObjectId (24-character hex string)."
+            )
+        
         success = await api_key_manager.reactivate_api_key(api_key_id)
         
         if not success:
+            logger.error(f"API key not found for activation: {api_key_id}")
             raise HTTPException(status_code=404, detail="API key not found")
         
+        logger.info(f"Successfully activated API key: {api_key_id}")
         return {"message": f"API key {api_key_id} activated successfully"}
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected error activating API key {api_key_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 @app.get("/admin/api-keys/{api_key_id}/analytics", response_model=APIKeyAnalytics)
 async def get_api_key_analytics(
@@ -734,6 +824,32 @@ async def get_api_key_analytics(
 ):
     """Get analytics for a specific API key."""
     try:
+        logger.info(f"Getting analytics for API key: {api_key_id}")
+        
+        # Auto-convert if they provided the actual API key instead of ID
+        if len(api_key_id) == 64:
+            logger.info("64-character API key provided, converting to API key ID")
+            # Look up the API key ID from the actual API key
+            key_hash = api_key_manager._hash_api_key(api_key_id)
+            api_key_doc = await db_manager.db.api_keys.find_one({"key_hash": key_hash})
+            
+            if not api_key_doc:
+                raise HTTPException(
+                    status_code=404, 
+                    detail="API key not found in database. Please check the API key value."
+                )
+            
+            # Convert to the correct ID format
+            api_key_id = str(api_key_doc["_id"])
+            logger.info(f"Converted to API key ID: {api_key_id}")
+            
+        elif len(api_key_id) != 24:
+            logger.error(f"Invalid API key ID format: {api_key_id} (length: {len(api_key_id)})")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid format. Expected either:\n- API key ID (24 characters): Use the 'id' field from API key creation\n- API key (64 characters): Use the 'api_key' field from API key creation\nYou provided {len(api_key_id)} characters."
+            )
+        
         analytics = await api_key_manager.get_api_key_analytics(api_key_id)
         
         if not analytics:
@@ -744,6 +860,7 @@ async def get_api_key_analytics(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error getting analytics for API key {api_key_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/admin/analytics")
@@ -755,6 +872,163 @@ async def get_system_analytics(admin_auth: bool = Depends(authenticate_admin)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/debug/api-keys")
+async def debug_api_keys(admin_auth: bool = Depends(authenticate_admin)):
+    """Debug endpoint to check API keys in database."""
+    try:
+        logger.info("Debug endpoint called - checking API keys in database")
+        
+        # Get all API keys (including inactive)
+        api_keys, total_count = await api_key_manager.list_api_keys(
+            skip=0,
+            limit=100,
+            include_inactive=True
+        )
+        
+        # Format for debugging
+        debug_info = {
+            "total_api_keys": total_count,
+            "api_keys": []
+        }
+        
+        for key in api_keys:
+            debug_info["api_keys"].append({
+                "id": key["id"],
+                "consumer_name": key["consumer_name"],
+                "consumer_email": key["consumer_email"],
+                "is_active": key["is_active"],
+                "created_at": key["created_at"],
+                "total_requests": key["total_requests"]
+            })
+        
+        logger.info(f"Debug: Found {total_count} API keys in database")
+        return debug_info
+        
+    except Exception as e:
+        logger.error(f"Debug endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Debug error: {str(e)}")
+
+@app.get("/admin/lookup-api-key-id/{api_key}")
+async def lookup_api_key_id(api_key: str, admin_auth: bool = Depends(authenticate_admin)):
+    """Look up API key ID by providing the actual API key."""
+    try:
+        logger.info(f"Looking up API key ID for provided API key: {api_key[:8]}...")
+        
+        # Validate the API key format
+        if len(api_key) != 64:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid API key format. Expected 64 characters, got {len(api_key)} characters."
+            )
+        
+        # Find the API key in database by hash
+        from .api_key_manager import api_key_manager
+        key_hash = api_key_manager._hash_api_key(api_key)
+        
+        api_key_doc = await db_manager.db.api_keys.find_one({
+            "key_hash": key_hash
+        })
+        
+        if not api_key_doc:
+            raise HTTPException(status_code=404, detail="API key not found in database")
+        
+        result = {
+            "api_key_id": str(api_key_doc["_id"]),
+            "consumer_name": api_key_doc["consumer_name"],
+            "consumer_email": api_key_doc["consumer_email"],
+            "is_active": api_key_doc["is_active"],
+            "created_at": api_key_doc["created_at"],
+            "message": f"Use this API key ID for deactivation/activation: {str(api_key_doc['_id'])}"
+        }
+        
+        logger.info(f"Found API key ID: {str(api_key_doc['_id'])} for consumer: {api_key_doc['consumer_name']}")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error looking up API key ID: {e}")
+        raise HTTPException(status_code=500, detail=f"Lookup error: {str(e)}")
+
+@app.get("/admin/debug/request-logs/{api_key_identifier}")
+async def debug_request_logs(api_key_identifier: str, admin_auth: bool = Depends(authenticate_admin)):
+    """Debug endpoint to check request logs for a specific API key."""
+    try:
+        logger.info(f"Debugging request logs for: {api_key_identifier}")
+        
+        # Convert to API key ID if needed
+        if len(api_key_identifier) == 64:
+            # Look up the API key ID from the actual API key
+            key_hash = api_key_manager._hash_api_key(api_key_identifier)
+            api_key_doc = await db_manager.db.api_keys.find_one({"key_hash": key_hash})
+            
+            if not api_key_doc:
+                raise HTTPException(status_code=404, detail="API key not found in database")
+            
+            api_key_id = str(api_key_doc["_id"])
+            object_id = api_key_doc["_id"]
+        elif len(api_key_identifier) == 24:
+            api_key_id = api_key_identifier
+            try:
+                from bson import ObjectId
+                object_id = ObjectId(api_key_identifier)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid ObjectId format: {e}")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid API key or API key ID format")
+        
+        # Get API key info
+        api_key_doc = await db_manager.db.api_keys.find_one({"_id": object_id})
+        if not api_key_doc:
+            raise HTTPException(status_code=404, detail="API key not found")
+        
+        # Get request logs
+        request_logs = await db_manager.db.request_logs.find({
+            "api_key_id": object_id
+        }).sort("timestamp", -1).limit(10).to_list(10)
+        
+        # Get total counts
+        total_logs = await db_manager.db.request_logs.count_documents({"api_key_id": object_id})
+        
+        # Format logs for debugging
+        formatted_logs = []
+        for log in request_logs:
+            formatted_logs.append({
+                "timestamp": log["timestamp"],
+                "endpoint": log["endpoint"],
+                "status": log["status"],
+                "processing_time": log["processing_time"],
+                "error_message": log.get("error_message"),
+                "file_size": log.get("file_size"),
+                "locations_found": log.get("locations_found")
+            })
+        
+        debug_info = {
+            "api_key_id": api_key_id,
+            "consumer_name": api_key_doc["consumer_name"],
+            "api_key_stats": {
+                "total_requests": api_key_doc["total_requests"],
+                "successful_requests": api_key_doc["successful_requests"],
+                "failed_requests": api_key_doc["failed_requests"],
+                "last_used": api_key_doc.get("last_used")
+            },
+            "request_logs_count": total_logs,
+            "recent_logs": formatted_logs,
+            "collections_info": {
+                "api_keys_count": await db_manager.db.api_keys.count_documents({}),
+                "request_logs_count": await db_manager.db.request_logs.count_documents({})
+            }
+        }
+        
+        logger.info(f"Debug: Found {total_logs} request logs for API key {api_key_id}")
+        return debug_info
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Debug request logs error: {e}")
+        raise HTTPException(status_code=500, detail=f"Debug error: {str(e)}")
 
 # ==== Authenticated API Endpoints (API Key Required) ====
 
