@@ -2,6 +2,7 @@
 """
 Enhanced FastAPI application for Aadhaar UID masking tool.
 Provides endpoints for single and bulk image processing with database storage and encryption.
+Includes API key authentication and admin management.
 """
 
 import os
@@ -30,7 +31,12 @@ from src.config import config
 from src.database import db_manager
 from src.encryption import encryption
 from src.storage import secure_storage
-from src.models import ProcessResult, StoredRecordResponse, RecordListResponse
+from src.models import (
+    ProcessResult, StoredRecordResponse, RecordListResponse,
+    APIKeyCreate, APIKeyResponse, APIKeyListResponse, APIKeyAnalytics
+)
+from src.api_key_manager import api_key_manager
+from src.auth import authenticate_api_key, authenticate_admin, log_api_request
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -38,9 +44,9 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="Enhanced Aadhaar UID Masking API",
-    description="API for detecting and masking Aadhaar numbers in images with secure database storage",
-    version="2.0.0"
+    title="Enhanced Aadhaar UID Masking API with Authentication",
+    description="API for detecting and masking Aadhaar numbers in images with secure database storage and API key authentication",
+    version="3.0.0"
 )
 
 @app.on_event("startup")
@@ -50,12 +56,35 @@ async def startup_event():
         connected = await db_manager.connect()
         if connected:
             logger.info("Database connected successfully")
+            # Create indexes for new collections
+            await create_indexes()
         else:
             logger.warning("Database connection failed, but API will continue without storage features")
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
         logger.warning("API will start without database storage capabilities")
-        # Don't fail startup - allow API to run without MongoDB
+
+async def create_indexes():
+    """Create database indexes for optimal performance."""
+    try:
+        # Indexes for API keys collection
+        await db_manager.db.api_keys.create_index([("key_hash", 1)], unique=True)
+        await db_manager.db.api_keys.create_index([("consumer_email", 1)])
+        await db_manager.db.api_keys.create_index([("is_active", 1)])
+        await db_manager.db.api_keys.create_index([("created_at", -1)])
+        
+        # Indexes for request logs collection
+        await db_manager.db.request_logs.create_index([("api_key_id", 1)])
+        await db_manager.db.request_logs.create_index([("timestamp", -1)])
+        await db_manager.db.request_logs.create_index([("status", 1)])
+        
+        # Compound indexes
+        await db_manager.db.request_logs.create_index([("api_key_id", 1), ("timestamp", -1)])
+        
+        logger.info("Database indexes created successfully")
+        
+    except Exception as e:
+        logger.warning(f"Could not create all indexes: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -122,20 +151,20 @@ def get_frontend_html() -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aadhaar UID Masking Tool</title>
+    <title>Aadhaar UID Masking Tool with API Key Authentication</title>
     <style>body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }</style>
 </head>
 <body>
-    <h1>Aadhaar UID Masking Tool</h1>
-    <p>Template not found. Please ensure the template file exists at templates/index.html</p>
+    <h1>Aadhaar UID Masking Tool with API Key Authentication</h1>
+    <p>This API requires authentication. Please contact the administrator for an API key.</p>
     <p>API endpoints are available at:</p>
     <ul style="list-style: none;">
         <li><a href="/api/info">/api/info</a> - API information</li>
         <li><a href="/health">/health</a> - Health check</li>
+        <li><a href="/admin/dashboard">/admin/dashboard</a> - Admin dashboard (requires admin credentials)</li>
     </ul>
 </body>
 </html>"""
-
 
 def process_single_image(image_path: str, output_filename: str, base_url: str) -> ProcessResult:
     """Process a single image and return results."""
@@ -191,6 +220,8 @@ def process_single_image(image_path: str, output_filename: str, base_url: str) -
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
 
+# ==== Public Endpoints (No Authentication Required) ====
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     """Serve the frontend HTML application."""
@@ -200,34 +231,553 @@ async def root():
 async def api_info():
     """API information endpoint."""
     return {
-        "message": "Aadhaar UID Masking API",
-        "version": "1.0.0",
+        "message": "Aadhaar UID Masking API with Authentication",
+        "version": "3.0.0",
+        "authentication": "API Key required (X-API-Key header)",
         "endpoints": {
             "single_image": "/process-image",
             "bulk_images": "/process-bulk",
+            "admin_dashboard": "/admin/dashboard",
             "health": "/health"
-        }
+        },
+        "admin_contact": "Contact administrator for API key"
     }
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    try:
+        # Check database connectivity
+        db_connected = db_manager._connection_validated
+        
+        # Check encryption system
+        encryption_ready = True
+        try:
+            encryption.get_encryption_info()
+        except:
+            encryption_ready = False
+        
+        return {
+            "status": "healthy" if db_connected and encryption_ready else "degraded",
+            "timestamp": datetime.now().isoformat(),
+            "database_connected": db_connected,
+            "encryption_ready": encryption_ready,
+            "version": "3.0.0"
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e),
+            "version": "3.0.0"
+        }
+
+# ==== Admin Endpoints (Basic Auth Required) ====
+
+@app.get("/admin/dashboard", response_class=HTMLResponse)
+async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
+    """Admin dashboard HTML page."""
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Aadhaar UID Masking</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; color: #333; margin-bottom: 30px; }
+        .nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .nav button:hover { background: #0056b3; }
+        .section { display: none; margin-top: 20px; }
+        .section.active { display: block; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #007bff; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #007bff; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .table th { background-color: #f8f9fa; font-weight: bold; }
+        .table tr:hover { background-color: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Aadhaar UID Masking - Admin Dashboard</h1>
+            <p>Manage API keys and view analytics</p>
+        </div>
+        
+        <div class="nav">
+            <button onclick="showSection('overview')">Overview</button>
+            <button onclick="showSection('create-key')">Create API Key</button>
+            <button onclick="showSection('manage-keys')">Manage Keys</button>
+            <button onclick="showSection('analytics')">Analytics</button>
+        </div>
+        
+        <div id="overview" class="section active">
+            <h2>System Overview</h2>
+            <div class="stats-grid" id="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-keys">-</div>
+                    <div>Total API Keys</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-keys">-</div>
+                    <div>Active Keys</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-requests">-</div>
+                    <div>Total Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="success-rate">-</div>
+                    <div>Success Rate</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="create-key" class="section">
+            <h2>Create New API Key</h2>
+            <form id="create-key-form">
+                <div class="form-group">
+                    <label for="consumer_name">Consumer Name:</label>
+                    <input type="text" id="consumer_name" name="consumer_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="consumer_email">Consumer Email:</label>
+                    <input type="email" id="consumer_email" name="consumer_email" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description (Optional):</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn">Generate API Key</button>
+            </form>
+            <div id="create-result"></div>
+        </div>
+        
+        <div id="manage-keys" class="section">
+            <h2>Manage API Keys</h2>
+            <button onclick="loadAPIKeys()" class="btn">Refresh List</button>
+            <div id="api-keys-container"></div>
+        </div>
+        
+        <div id="analytics" class="section">
+            <h2>System Analytics</h2>
+            <button onclick="loadAnalytics()" class="btn">Refresh Analytics</button>
+            <div id="analytics-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Show/hide sections
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Load data when section is shown
+            if (sectionId === 'overview') {
+                loadOverview();
+            } else if (sectionId === 'manage-keys') {
+                loadAPIKeys();
+            } else if (sectionId === 'analytics') {
+                loadAnalytics();
+            }
+        }
+        
+        // Load overview stats
+        async function loadOverview() {
+            try {
+                const response = await fetch('/admin/analytics', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                    }
+                });
+                const data = await response.json();
+                
+                document.getElementById('total-keys').textContent = data.total_api_keys || 0;
+                document.getElementById('active-keys').textContent = data.active_api_keys || 0;
+                document.getElementById('total-requests').textContent = data.total_requests || 0;
+                document.getElementById('success-rate').textContent = (data.success_rate || 0) + '%';
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+        
+        // Create API key form handler
+        document.getElementById('create-key-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                consumer_name: formData.get('consumer_name'),
+                consumer_email: formData.get('consumer_email'),
+                description: formData.get('description')
+            };
+            
+            try {
+                const response = await fetch('/admin/api-keys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('create-result').innerHTML = `
+                        <div class="alert alert-success">
+                            <h3>API Key Created Successfully!</h3>
+                            <p><strong>API Key:</strong> <code>${result.api_key}</code></p>
+                            <p><strong>Consumer:</strong> ${result.consumer_name}</p>
+                            <p style="color: red;"><strong>Important:</strong> Save this API key securely. It will not be shown again!</p>
+                        </div>
+                    `;
+                    e.target.reset();
+                } else {
+                    document.getElementById('create-result').innerHTML = `
+                        <div class="alert alert-error">
+                            <strong>Error:</strong> ${result.detail || 'Failed to create API key'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('create-result').innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        });
+        
+        // Load API keys
+        async function loadAPIKeys() {
+            try {
+                const response = await fetch('/admin/api-keys?include_inactive=true', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                    }
+                });
+                const data = await response.json();
+                
+                let html = '<table class="table"><thead><tr><th>Consumer Name</th><th>Email</th><th>Created</th><th>Status</th><th>Requests</th><th>Actions</th></tr></thead><tbody>';
+                
+                data.api_keys.forEach(key => {
+                    html += `
+                        <tr>
+                            <td>${key.consumer_name}</td>
+                            <td>${key.consumer_email}</td>
+                            <td>${new Date(key.created_at).toLocaleDateString()}</td>
+                            <td>${key.is_active ? '<span style="color: green;">Active</span>' : '<span style="color: red;">Inactive</span>'}</td>
+                            <td>${key.total_requests} (${key.successful_requests} success, ${key.failed_requests} failed)</td>
+                            <td>
+                                ${key.is_active ? 
+                                    `<button class="btn btn-danger" onclick="deactivateKey('${key.id}')">Deactivate</button>` :
+                                    `<button class="btn" onclick="activateKey('${key.id}')">Activate</button>`
+                                }
+                                <button class="btn" onclick="viewAnalytics('${key.id}')">Analytics</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('api-keys-container').innerHTML = html;
+            } catch (error) {
+                document.getElementById('api-keys-container').innerHTML = `
+                    <div class="alert alert-error">Error loading API keys: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Deactivate API key
+        async function deactivateKey(keyId) {
+            if (confirm('Are you sure you want to deactivate this API key?')) {
+                try {
+                    const response = await fetch(`/admin/api-keys/${keyId}/deactivate`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        alert('API key deactivated successfully');
+                        loadAPIKeys();
+                    } else {
+                        alert('Failed to deactivate API key');
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+        }
+        
+        // Activate API key
+        async function activateKey(keyId) {
+            try {
+                const response = await fetch(`/admin/api-keys/${keyId}/activate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('API key activated successfully');
+                    loadAPIKeys();
+                } else {
+                    alert('Failed to activate API key');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/admin/analytics', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                    }
+                });
+                const data = await response.json();
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.requests_today || 0}</div>
+                            <div>Requests Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.requests_this_week || 0}</div>
+                            <div>Requests This Week</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.requests_this_month || 0}</div>
+                            <div>Requests This Month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.average_processing_time || 0}s</div>
+                            <div>Avg Processing Time</div>
+                        </div>
+                    </div>
+                    <h3>System Details</h3>
+                    <table class="table">
+                        <tr><td>Total API Keys</td><td>${data.total_api_keys || 0}</td></tr>
+                        <tr><td>Active API Keys</td><td>${data.active_api_keys || 0}</td></tr>
+                        <tr><td>Total Requests</td><td>${data.total_requests || 0}</td></tr>
+                        <tr><td>Successful Requests</td><td>${data.successful_requests || 0}</td></tr>
+                        <tr><td>Failed Requests</td><td>${data.failed_requests || 0}</td></tr>
+                        <tr><td>Success Rate</td><td>${data.success_rate || 0}%</td></tr>
+                        <tr><td>Last Updated</td><td>${new Date(data.last_updated).toLocaleString()}</td></tr>
+                    </table>
+                `;
+                
+                document.getElementById('analytics-container').innerHTML = html;
+            } catch (error) {
+                document.getElementById('analytics-container').innerHTML = `
+                    <div class="alert alert-error">Error loading analytics: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Load overview on page load
+        loadOverview();
+    </script>
+</body>
+</html>
+    """
+
+@app.post("/admin/api-keys", response_model=APIKeyResponse)
+async def create_api_key(
+    api_key_data: APIKeyCreate,
+    admin_auth: bool = Depends(authenticate_admin)
+):
+    """Create a new API key for a consumer."""
+    try:
+        api_key_id, api_key = await api_key_manager.generate_api_key(
+            consumer_name=api_key_data.consumer_name,
+            consumer_email=api_key_data.consumer_email,
+            description=api_key_data.description
+        )
+        
+        # Get the created API key data
+        api_key_doc = await db_manager.db.api_keys.find_one({"_id": ObjectId(api_key_id)})
+        
+        response = APIKeyResponse(
+            id=api_key_id,
+            api_key=api_key,  # Only returned once during creation
+            consumer_name=api_key_doc["consumer_name"],
+            consumer_email=api_key_doc["consumer_email"],
+            description=api_key_doc.get("description"),
+            is_active=api_key_doc["is_active"],
+            created_at=api_key_doc["created_at"],
+            last_used=api_key_doc.get("last_used"),
+            total_requests=api_key_doc["total_requests"],
+            successful_requests=api_key_doc["successful_requests"],
+            failed_requests=api_key_doc["failed_requests"]
+        )
+        
+        return response
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/api-keys", response_model=APIKeyListResponse)
+async def list_api_keys(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    include_inactive: bool = Query(False),
+    admin_auth: bool = Depends(authenticate_admin)
+):
+    """List all API keys with pagination."""
+    try:
+        skip = (page - 1) * page_size
+        api_keys, total_count = await api_key_manager.list_api_keys(
+            skip=skip,
+            limit=page_size,
+            include_inactive=include_inactive
+        )
+        
+        # Convert to response format (without exposing actual API keys)
+        api_key_responses = []
+        for key_doc in api_keys:
+            response = APIKeyResponse(
+                id=key_doc["id"],
+                api_key="***HIDDEN***",  # Never expose actual API keys in listings
+                consumer_name=key_doc["consumer_name"],
+                consumer_email=key_doc["consumer_email"],
+                description=key_doc.get("description"),
+                is_active=key_doc["is_active"],
+                created_at=key_doc["created_at"],
+                last_used=key_doc.get("last_used"),
+                total_requests=key_doc["total_requests"],
+                successful_requests=key_doc["successful_requests"],
+                failed_requests=key_doc["failed_requests"]
+            )
+            api_key_responses.append(response)
+        
+        total_pages = (total_count + page_size - 1) // page_size
+        
+        return APIKeyListResponse(
+            api_keys=api_key_responses,
+            total_count=total_count,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/api-keys/{api_key_id}/deactivate")
+async def deactivate_api_key(
+    api_key_id: str,
+    admin_auth: bool = Depends(authenticate_admin)
+):
+    """Deactivate an API key."""
+    try:
+        success = await api_key_manager.deactivate_api_key(api_key_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="API key not found")
+        
+        return {"message": f"API key {api_key_id} deactivated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/api-keys/{api_key_id}/activate")
+async def activate_api_key(
+    api_key_id: str,
+    admin_auth: bool = Depends(authenticate_admin)
+):
+    """Reactivate an API key."""
+    try:
+        success = await api_key_manager.reactivate_api_key(api_key_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="API key not found")
+        
+        return {"message": f"API key {api_key_id} activated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/api-keys/{api_key_id}/analytics", response_model=APIKeyAnalytics)
+async def get_api_key_analytics(
+    api_key_id: str,
+    admin_auth: bool = Depends(authenticate_admin)
+):
+    """Get analytics for a specific API key."""
+    try:
+        analytics = await api_key_manager.get_api_key_analytics(api_key_id)
+        
+        if not analytics:
+            raise HTTPException(status_code=404, detail="API key not found")
+        
+        return APIKeyAnalytics(**analytics)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/analytics")
+async def get_system_analytics(admin_auth: bool = Depends(authenticate_admin)):
+    """Get system-wide analytics."""
+    try:
+        analytics = await api_key_manager.get_system_analytics()
+        return analytics
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==== Authenticated API Endpoints (API Key Required) ====
 
 @app.post("/process-image", response_model=ProcessResult)
-async def process_image(request: Request, file: UploadFile = File(...), store: bool = Query(False, description="Store processed image in database")):
+async def process_image(
+    request: Request, 
+    file: UploadFile = File(...), 
+    store: bool = Query(False, description="Store processed image in database"),
+    consumer_data: dict = Depends(authenticate_api_key)
+):
     """
     Process a single image to detect and mask Aadhaar numbers.
-    
-    Args:
-        file: Image file to process (JPEG, PNG, etc.)
-        
-    Returns:
-        ProcessResult: Results including masked image URL and detected UIDs
+    Requires API key authentication.
     """
+    start_time = datetime.now()
     
     # Validate file type
     if not file.content_type or not file.content_type.startswith('image/'):
+        await log_api_request(
+            request, "/process-image", 
+            (datetime.now() - start_time).total_seconds(),
+            "failed", "Invalid file type"
+        )
         raise HTTPException(status_code=400, detail="File must be an image")
     
     # Generate unique filename
@@ -255,7 +805,9 @@ async def process_image(request: Request, file: UploadFile = File(...), store: b
                     "uid_numbers_count": len(result.uid_numbers),
                     "file_size_original": upload_path.stat().st_size,
                     "file_size_masked": (STATIC_DIR / masked_filename).stat().st_size,
-                    "image_format": file.content_type or "unknown"
+                    "image_format": file.content_type or "unknown",
+                    "consumer_name": consumer_data["consumer_name"],
+                    "consumer_email": consumer_data["consumer_email"]
                 }
                 
                 # Store with encryption
@@ -274,29 +826,63 @@ async def process_image(request: Request, file: UploadFile = File(...), store: b
                 logger.error(f"Failed to store in database: {e}")
                 # Continue without storage - don't fail the entire request
         
+        # Log successful request
+        await log_api_request(
+            request, "/process-image",
+            result.processing_time, "success",
+            file_size=upload_path.stat().st_size,
+            locations_found=result.locations_found
+        )
+        
         return result
         
+    except HTTPException as e:
+        # Log failed request
+        await log_api_request(
+            request, "/process-image",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", str(e.detail)
+        )
+        raise
+    except Exception as e:
+        # Log failed request
+        await log_api_request(
+            request, "/process-image",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", str(e)
+        )
+        raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
     finally:
         # Clean up uploaded file
         if upload_path.exists():
             upload_path.unlink()
 
 @app.post("/process-bulk", response_model=BulkProcessResult)
-async def process_bulk_images(request: Request, files: List[UploadFile] = File(...)):
+async def process_bulk_images(
+    request: Request, 
+    files: List[UploadFile] = File(...),
+    consumer_data: dict = Depends(authenticate_api_key)
+):
     """
     Process multiple images to detect and mask Aadhaar numbers.
-    
-    Args:
-        files: List of image files to process
-        
-    Returns:
-        BulkProcessResult: Results for all processed images
+    Requires API key authentication.
     """
+    start_time = datetime.now()
     
     if not files:
+        await log_api_request(
+            request, "/process-bulk",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", "No files provided"
+        )
         raise HTTPException(status_code=400, detail="No files provided")
     
     if len(files) > 10:  # Limit bulk processing
+        await log_api_request(
+            request, "/process-bulk",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", "Too many files"
+        )
         raise HTTPException(status_code=400, detail="Maximum 10 files allowed for bulk processing")
     
     results = []
@@ -349,18 +935,22 @@ async def process_bulk_images(request: Request, files: List[UploadFile] = File(.
         errors=errors
     )
     
+    # Log request
+    status = "success" if successful_processes > 0 else "failed"
+    error_msg = "; ".join(errors) if errors else None
+    
+    await log_api_request(
+        request, "/process-bulk",
+        (datetime.now() - start_time).total_seconds(),
+        status, error_msg
+    )
+    
     return bulk_result
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
     """
     Download a processed image file with proper headers for browser download.
-    
-    Args:
-        filename: Name of the file to download
-        
-    Returns:
-        FileResponse: The requested file with download headers
     """
     file_path = STATIC_DIR / filename
     
@@ -392,12 +982,9 @@ async def download_file(filename: str):
     )
 
 @app.delete("/cleanup")
-async def cleanup_files():
+async def cleanup_files(admin_auth: bool = Depends(authenticate_admin)):
     """
     Clean up old processed files (admin endpoint).
-    
-    Returns:
-        dict: Cleanup results
     """
     try:
         # Clean up files older than 1 hour
@@ -420,15 +1007,27 @@ async def cleanup_files():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cleanup error: {str(e)}")
 
-# New Database Storage Endpoints
+# Database Storage Endpoints (require API key authentication)
 
 @app.post("/process-and-store-image", response_model=ProcessResult)
-async def process_and_store_image(request: Request, file: UploadFile = File(...)):
+async def process_and_store_image(
+    request: Request, 
+    file: UploadFile = File(...),
+    consumer_data: dict = Depends(authenticate_api_key)
+):
     """
     Process a single image and automatically store in database with encryption.
+    Requires API key authentication.
     """
+    start_time = datetime.now()
+    
     # Validate file type
     if not file.content_type or not file.content_type.startswith('image/'):
+        await log_api_request(
+            request, "/process-and-store-image",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", "Invalid file type"
+        )
         raise HTTPException(status_code=400, detail="File must be an image")
     
     # Generate unique filename
@@ -454,7 +1053,9 @@ async def process_and_store_image(request: Request, file: UploadFile = File(...)
             "uid_numbers_count": len(result.uid_numbers),
             "file_size_original": upload_path.stat().st_size,
             "file_size_masked": (STATIC_DIR / masked_filename).stat().st_size,
-            "image_format": file.content_type or "unknown"
+            "image_format": file.content_type or "unknown",
+            "consumer_name": consumer_data["consumer_name"],
+            "consumer_email": consumer_data["consumer_email"]
         }
         
         record_id = await secure_storage.store_processed_card(
@@ -467,216 +1068,34 @@ async def process_and_store_image(request: Request, file: UploadFile = File(...)
         
         result.record_id = str(record_id)
         
+        # Log successful request
+        await log_api_request(
+            request, "/process-and-store-image",
+            result.processing_time, "success",
+            file_size=upload_path.stat().st_size,
+            locations_found=result.locations_found
+        )
+        
         return result
         
-    except HTTPException:
+    except HTTPException as e:
+        await log_api_request(
+            request, "/process-and-store-image",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", str(e.detail)
+        )
         raise
     except Exception as e:
+        await log_api_request(
+            request, "/process-and-store-image",
+            (datetime.now() - start_time).total_seconds(),
+            "failed", str(e)
+        )
         raise HTTPException(status_code=500, detail=f"Processing and storage error: {str(e)}")
     finally:
         # Clean up uploaded file
         if upload_path.exists():
             upload_path.unlink()
-
-@app.get("/retrieve-image/{record_id}/{image_type}")
-async def retrieve_image(record_id: str, image_type: str):
-    """
-    Retrieve a decrypted image from database storage.
-    
-    Args:
-        record_id: Database record ID
-        image_type: 'original' or 'masked'
-    """
-    try:
-        # Validate image_type
-        if image_type not in ['original', 'masked']:
-            raise HTTPException(status_code=400, detail="image_type must be 'original' or 'masked'")
-        
-        # Convert record_id to ObjectId
-        try:
-            object_id = ObjectId(record_id)
-        except:
-            raise HTTPException(status_code=400, detail="Invalid record ID format")
-        
-        # Retrieve image
-        image_data, content_type, filename = await secure_storage.retrieve_encrypted_image(
-            object_id, image_type
-        )
-        
-        if image_data is None:
-            raise HTTPException(status_code=404, detail="Image not found")
-        
-        # Return as streaming response
-        return StreamingResponse(
-            io.BytesIO(image_data),
-            media_type=content_type,
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Image retrieval error: {str(e)}")
-
-@app.get("/get-record/{record_id}", response_model=StoredRecordResponse)
-async def get_record(record_id: str, request: Request):
-    """
-    Get record metadata with decrypted UID (masked for display).
-    """
-    try:
-        # Convert record_id to ObjectId
-        try:
-            object_id = ObjectId(record_id)
-        except:
-            raise HTTPException(status_code=400, detail="Invalid record ID format")
-        
-        # Retrieve record
-        record = await secure_storage.retrieve_record_with_decrypted_uid(object_id)
-        
-        if not record:
-            raise HTTPException(status_code=404, detail="Record not found")
-        
-        # Get base URL
-        base_url = str(request.base_url).rstrip('/')
-        
-        # Create response
-        response = StoredRecordResponse(
-            id=str(record["_id"]),
-            filename=record["filename"],
-            uid_numbers=record["uid_numbers"],
-            created_at=record["created_at"],
-            status=record["status"],
-            original_image_url=f"{base_url}/retrieve-image/{record_id}/original",
-            masked_image_url=f"{base_url}/retrieve-image/{record_id}/masked"
-        )
-        
-        return response
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Record retrieval error: {str(e)}")
-
-@app.get("/list-records", response_model=RecordListResponse)
-async def list_records(
-    request: Request,
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Records per page"),
-    search: Optional[str] = Query(None, description="Search term for filename")
-):
-    """
-    List stored records with pagination and optional search.
-    """
-    try:
-        # Calculate skip
-        skip = (page - 1) * page_size
-        
-        # Get records
-        if search:
-            records, total_count = await secure_storage.search_records_by_filename(
-                search, skip, page_size
-            )
-        else:
-            records, total_count = await secure_storage.list_stored_records(
-                skip, page_size
-            )
-        
-        # Get base URL
-        base_url = str(request.base_url).rstrip('/')
-        
-        # Convert to response format
-        record_responses = []
-        for record in records:
-            record_id = str(record["_id"])
-            record_response = StoredRecordResponse(
-                id=record_id,
-                filename=record["filename"],
-                uid_numbers=record.get("uid_numbers", ["XXXX XXXX XXXX"]),
-                created_at=record["created_at"],
-                status=record["status"],
-                original_image_url=f"{base_url}/retrieve-image/{record_id}/original",
-                masked_image_url=f"{base_url}/retrieve-image/{record_id}/masked"
-            )
-            record_responses.append(record_response)
-        
-        # Calculate total pages
-        total_pages = (total_count + page_size - 1) // page_size
-        
-        return RecordListResponse(
-            records=record_responses,
-            total_count=total_count,
-            page=page,
-            page_size=page_size,
-            total_pages=total_pages
-        )
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Record listing error: {str(e)}")
-
-@app.delete("/delete-record/{record_id}")
-async def delete_record(record_id: str):
-    """
-    Delete a stored record and its associated encrypted files.
-    """
-    try:
-        # Convert record_id to ObjectId
-        try:
-            object_id = ObjectId(record_id)
-        except:
-            raise HTTPException(status_code=400, detail="Invalid record ID format")
-        
-        # Delete record
-        success = await secure_storage.delete_stored_record(object_id)
-        
-        if not success:
-            raise HTTPException(status_code=404, detail="Record not found or deletion failed")
-        
-        return {"message": f"Record {record_id} deleted successfully"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Record deletion error: {str(e)}")
-
-@app.get("/statistics")
-async def get_statistics():
-    """
-    Get system statistics including database and encryption info.
-    """
-    try:
-        stats = await secure_storage.get_storage_statistics()
-        return stats
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Statistics error: {str(e)}")
-
-@app.get("/health")
-async def enhanced_health_check():
-    """Enhanced health check including database and encryption status."""
-    try:
-        # Check database connectivity
-        db_connected = db_manager._connection_validated
-        
-        # Check encryption system
-        encryption_ready = True
-        try:
-            encryption.get_encryption_info()
-        except:
-            encryption_ready = False
-        
-        return {
-            "status": "healthy" if db_connected and encryption_ready else "degraded",
-            "timestamp": datetime.now().isoformat(),
-            "database_connected": db_connected,
-            "encryption_ready": encryption_ready,
-            "version": "2.0.0"
-        }
-    except Exception as e:
-        return {
-            "status": "unhealthy",
-            "timestamp": datetime.now().isoformat(),
-            "error": str(e),
-            "version": "2.0.0"
-        }
 
 if __name__ == "__main__":
     import uvicorn
