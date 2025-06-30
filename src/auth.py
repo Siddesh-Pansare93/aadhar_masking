@@ -93,6 +93,11 @@ async def authenticate_admin(credentials: HTTPBasicCredentials = Depends(securit
     # Constant-time comparison to prevent timing attacks
     correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
     correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
+
+    logger.info(credentials)
+
+    logger.info(correct_password)
+    logger.info(correct_username)
     
     if not (correct_username and correct_password):
         raise HTTPException(

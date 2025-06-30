@@ -404,7 +404,7 @@ async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
             try {
                 const response = await fetch('/admin/analytics', {
                     headers: {
-                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                        'Authorization': 'Basic ' + btoa('admin123:admin123')
                     }
                 });
                 const data = await response.json();
@@ -434,7 +434,7 @@ async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                        'Authorization': 'Basic ' + btoa('admin123:admin123')
                     },
                     body: JSON.stringify(data)
                 });
@@ -472,7 +472,7 @@ async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
             try {
                 const response = await fetch('/admin/api-keys?include_inactive=true', {
                     headers: {
-                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                        'Authorization': 'Basic ' + btoa('admin123:admin123')
                     }
                 });
                 const data = await response.json();
@@ -514,7 +514,7 @@ async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
                     const response = await fetch(`/admin/api-keys/${keyId}/deactivate`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                            'Authorization': 'Basic ' + btoa('admin123:admin123')
                         }
                     });
                     
@@ -536,7 +536,7 @@ async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
                 const response = await fetch(`/admin/api-keys/${keyId}/activate`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                        'Authorization': 'Basic ' + btoa('admin123:admin123')
                     }
                 });
                 
@@ -556,7 +556,7 @@ async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):
             try {
                 const response = await fetch('/admin/analytics', {
                     headers: {
-                        'Authorization': 'Basic ' + btoa('admin123:admin123@/src')
+                        'Authorization': 'Basic ' + btoa('admin123:admin123')
                     }
                 });
                 const data = await response.json();
@@ -923,7 +923,7 @@ async def lookup_api_key_id(api_key: str, admin_auth: bool = Depends(authenticat
             )
         
         # Find the API key in database by hash
-        from .api_key_manager import api_key_manager
+        from api_key_manager import api_key_manager
         key_hash = api_key_manager._hash_api_key(api_key)
         
         api_key_doc = await db_manager.db.api_keys.find_one({
