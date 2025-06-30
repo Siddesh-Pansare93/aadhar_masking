@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aadhaar UID Masking Tool</title>
+    <title>Aadhaar UID Masking Tool - AI-Powered Document Security</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,68 +14,165 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             padding: 20px;
+            margin: 0;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.15),
+                0 16px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             overflow: hidden;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-align: center;
-            padding: 40px 20px;
+            padding: 25px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: headerGlow 20s ease-in-out infinite;
+        }
+
+        @keyframes headerGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 300;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            position: relative;
+            z-index: 1;
+            color: white;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 0.95em;
             opacity: 0.9;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.4;
+        }
+
+        .header-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+            position: relative;
+            z-index: 1;
+            animation: floatIcon 6s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
         .main-content {
-            padding: 40px;
+            padding: 30px 30px;
+            background: rgba(248, 250, 252, 0.5);
         }
 
         .tabs {
             display: flex;
             justify-content: center;
-            margin-bottom: 40px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .tab {
-            padding: 15px 30px;
+            padding: 16px 32px;
             cursor: pointer;
             border: none;
-            background: none;
+            background: transparent;
             font-size: 1.1em;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #64748b;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 12px;
         }
 
         .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
         }
 
-        .tab:hover {
+        .tab.active::before {
+            opacity: 1;
+        }
+
+        .tab:hover:not(.active) {
             color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .tab span {
+            position: relative;
+            z-index: 1;
         }
 
         .tab-content {
@@ -85,40 +184,76 @@
         }
 
         .upload-area {
-            border: 3px dashed #ddd;
-            border-radius: 15px;
-            padding: 40px;
+            border: 2px dashed rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 50px 40px;
             text-align: center;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
+            margin-bottom: 40px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
         }
 
-        .upload-area.dragover {
-            border-color: #667eea;
-            background-color: #f8f9ff;
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
+        .upload-area.dragover,
         .upload-area:hover {
-            border-color: #667eea;
-            background-color: #f8f9ff;
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(248, 249, 255, 0.9);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+        }
+
+        .upload-area.dragover::before,
+        .upload-area:hover::before {
+            opacity: 1;
         }
 
         .upload-icon {
-            font-size: 3em;
-            color: #ddd;
+            font-size: 4em;
+            color: #667eea;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+            animation: uploadIconFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes uploadIconFloat {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.05); }
         }
 
         .upload-text {
-            font-size: 1.2em;
-            color: #666;
-            margin-bottom: 10px;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.01em;
         }
 
         .upload-subtext {
-            color: #999;
-            font-size: 0.9em;
+            color: #64748b;
+            font-size: 1em;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+            opacity: 0.9;
         }
 
         .file-input {
@@ -129,25 +264,53 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
+            padding: 16px 32px;
+            border-radius: 12px;
             font-size: 1.1em;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 10px;
-            min-width: 150px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 12px;
+            min-width: 160px;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
         }
 
         .btn:disabled {
-            background: #ccc;
+            background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+            opacity: 0.7;
+        }
+
+        .btn:disabled::before {
+            display: none;
         }
 
         .processing {
@@ -180,12 +343,37 @@
         }
 
         .result-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border-left: 5px solid #667eea;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(102, 126, 234, 0.15);
+            box-shadow: 
+                0 20px 40px rgba(102, 126, 234, 0.08),
+                0 8px 16px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 32px 64px rgba(102, 126, 234, 0.15),
+                0 16px 32px rgba(0, 0, 0, 0.08);
         }
 
         .result-header {
@@ -502,18 +690,47 @@
 
         /* API Key Section Styles */
         .api-key-section {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border-left: 5px solid #667eea;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 20px 40px rgba(102, 126, 234, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .api-key-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .api-key-container h3 {
-            margin: 0 0 20px 0;
-            color: #333;
+            margin: 0 0 24px 0;
+            color: #1e293b;
             text-align: center;
+            font-size: 1.4em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
         .api-key-input-group {
@@ -751,39 +968,109 @@
         }
 
         @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 16px;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
             .header h1 {
-                font-size: 2em;
+                font-size: 1.6em;
+            }
+
+            .header p {
+                font-size: 0.9em;
             }
 
             .main-content {
-                padding: 20px;
+                padding: 30px 20px;
             }
 
             .tabs {
-                flex-direction: column;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 4px;
+                margin-bottom: 30px;
             }
 
             .tab {
-                border-bottom: none;
-                border-right: 3px solid transparent;
+                flex-shrink: 0;
+                padding: 12px 20px;
+                font-size: 0.95em;
             }
 
-            .tab.active {
-                border-right-color: #667eea;
-                border-bottom-color: transparent;
+            .upload-area {
+                padding: 30px 20px;
+                margin-bottom: 25px;
+            }
+
+            .upload-icon {
+                font-size: 3em;
+            }
+
+            .upload-text {
+                font-size: 1.2em;
+            }
+
+            .upload-subtext {
+                font-size: 0.9em;
+            }
+
+            .btn {
+                padding: 14px 24px;
+                font-size: 1em;
+                min-width: 140px;
+                margin: 8px;
+            }
+
+            .result-card {
+                padding: 20px;
+                border-radius: 16px;
             }
 
             .result-details {
                 grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .detail-item {
+                padding: 12px;
+            }
+
+            .api-key-section {
+                padding: 20px;
+                border-radius: 16px;
+            }
+
+            .api-key-container h3 {
+                font-size: 1.2em;
+                margin-bottom: 20px;
+            }
+
+            .api-key-input-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .api-key-input-group input {
+                margin-bottom: 0;
+            }
+
+            .api-key-input-group button {
+                margin-left: 0 !important;
+                margin: 6px 0;
             }
 
             .records-table {
-                font-size: 0.9em;
+                font-size: 0.85em;
             }
 
             .records-table th,
             .records-table td {
-                padding: 10px 5px;
+                padding: 8px 5px;
             }
 
             .record-actions {
@@ -793,28 +1080,16 @@
 
             .statistics-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .api-key-input-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .api-key-input-group input {
-                margin-bottom: 10px;
-            }
-
-            .api-key-input-group button {
-                margin-left: 0 !important;
+                gap: 15px;
             }
 
             .preview-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                 gap: 10px;
             }
 
             .preview-image {
-                max-height: 200px;
+                max-height: 180px;
             }
 
             .preview-info {
@@ -826,14 +1101,90 @@
             .preview-filename {
                 max-width: 100%;
             }
+
+            .modal-content {
+                margin: 5%;
+                width: 90%;
+                max-height: 85vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 5px;
+                border-radius: 12px;
+            }
+
+            .header {
+                padding: 15px 10px;
+            }
+
+            .header h1 {
+                font-size: 1.4em;
+                margin-bottom: 6px;
+            }
+
+            .header p {
+                font-size: 0.85em;
+            }
+
+            .main-content {
+                padding: 20px 15px;
+            }
+
+            .tabs {
+                gap: 2px;
+                padding: 2px;
+            }
+
+            .tab {
+                padding: 10px 16px;
+                font-size: 0.9em;
+                border-radius: 8px;
+            }
+
+            .upload-area {
+                padding: 25px 15px;
+            }
+
+            .upload-icon {
+                font-size: 2.5em;
+            }
+
+            .upload-text {
+                font-size: 1.1em;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.95em;
+                min-width: 120px;
+            }
+
+            .api-key-section {
+                padding: 15px;
+            }
+
+            .result-card {
+                padding: 15px;
+            }
+
+            .statistics-grid {
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔐 Aadhaar UID Masking Tool</h1>
-            <p>Securely detect and mask Aadhaar numbers in your documents</p>
+            <div class="header-icon">🛡️</div>
+            <h1>Aadhaar UID Masking Tool</h1>
+            <p>Secure AI-powered detection and masking of Aadhaar numbers</p>
         </div>
 
         <div class="main-content">
@@ -860,13 +1211,13 @@
 
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('single')">
-                    📄 Single Image
+                    <span><i class="fas fa-image"></i> Single Image</span>
                 </button>
                 <button class="tab" onclick="switchTab('bulk')">
-                    📚 Bulk Processing
+                    <span><i class="fas fa-images"></i> Bulk Processing</span>
                 </button>
                 <button class="tab" onclick="switchTab('records')">
-                    📋 Records
+                    <span><i class="fas fa-database"></i> Records</span>
                 </button>
             </div>
 
@@ -975,10 +1326,6 @@
 
                 <div id="pagination-container" style="text-align: center; margin-top: 20px;">
                     <!-- Pagination controls will be added here -->
-                </div>
-
-                <div id="statistics-container" style="margin-top: 30px;">
-                    <!-- Statistics will be loaded here -->
                 </div>
             </div>
         </div>

@@ -302,24 +302,26 @@
                 <h3><i class="fas fa-file-alt"></i> Request Logs Viewer</h3>
                 <span class="close" onclick="closeLogsModal()">&times;</span>
             </div>
-            <div class="form-group">
-                <label for="logs-identifier">
-                    <i class="fas fa-key"></i>
-                    API Key or API Key ID:
-                </label>
-                <input type="text" id="logs-identifier" placeholder="Enter API key (64 chars) or API key ID (24 chars)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="logs-identifier">
+                        <i class="fas fa-key"></i>
+                        API Key or API Key ID:
+                    </label>
+                    <input type="text" id="logs-identifier" placeholder="Enter API key (64 chars) or API key ID (24 chars)">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <button class="btn btn-primary" onclick="viewRequestLogs()">
+                        <i class="fas fa-eye"></i>
+                        View Logs
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeLogsModal()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                </div>
+                <div id="logs-results"></div>
             </div>
-            <div class="form-actions">
-                <button class="btn btn-primary" onclick="viewRequestLogs()">
-                    <i class="fas fa-eye"></i>
-                    View Logs
-                </button>
-                <button class="btn btn-secondary" onclick="closeLogsModal()">
-                    <i class="fas fa-times"></i>
-                    Cancel
-                </button>
-            </div>
-            <div id="logs-results"></div>
         </div>
     </div>
 

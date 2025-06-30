@@ -527,20 +527,78 @@ function closeCreateKeyModal() {
 // Debug Tools
 function debugApiKeys() {
     makeAuthenticatedRequest('/admin/debug/api-keys')
-        .then(response => response ? response.json() : null)
-        .then(data => {
-            if (data) {
-                const resultsDiv = document.getElementById('debug-results');
-                resultsDiv.innerHTML = `
-                    <h4>Debug Results</h4>
-                    <p>Total API Keys: ${data.total_api_keys}</p>
-                    <pre>${JSON.stringify(data, null, 2)}</pre>
-                `;
+        .then(response => {
+            if (!response) {
+                throw new Error('No response received');
             }
+            
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.detail || `HTTP ${response.status}: ${response.statusText}`);
+                });
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            const resultsDiv = document.getElementById('debug-results');
+            
+            let apiKeysDisplay = '';
+            if (data.api_keys && data.api_keys.length > 0) {
+                apiKeysDisplay = data.api_keys.map(key => `
+                    <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid ${key.is_active ? '#28a745' : '#dc3545'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: #333;">${key.consumer_name || 'Unknown'}</div>
+                            <span style="background: ${key.is_active ? '#28a745' : '#dc3545'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">
+                                ${key.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            <div>Email: ${key.consumer_email || 'Unknown'}</div>
+                            <div>ID: <code>${key.id}</code></div>
+                            <div>Created: ${key.created_at ? new Date(key.created_at).toLocaleString() : 'Unknown'}</div>
+                            <div>Requests: ${key.total_requests || 0} (${key.successful_requests || 0} success, ${key.failed_requests || 0} failed)</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                apiKeysDisplay = '<div style="text-align: center; color: #666; padding: 20px;">No API keys found</div>';
+            }
+            
+            resultsDiv.innerHTML = `
+                <div class="settings-card">
+                    <h4><i class="fas fa-search"></i> Debug Results - API Keys</h4>
+                    <div class="info-item">
+                        <span>Total API Keys:</span>
+                        <span style="font-weight: 600; color: #667eea;">${data.total_api_keys || 0}</span>
+                    </div>
+                    
+                    <h5 style="margin: 20px 0 10px 0;"><i class="fas fa-list"></i> API Keys Details</h5>
+                    <div style="max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                        ${apiKeysDisplay}
+                    </div>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary style="cursor: pointer; font-weight: 600; color: #667eea;">
+                            <i class="fas fa-code"></i> Raw JSON Data
+                        </summary>
+                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px; border: 1px solid #e2e8f0; font-size: 0.85em;">${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
         })
         .catch(error => {
             console.error('Debug error:', error);
-            showError('Debug operation failed');
+            const resultsDiv = document.getElementById('debug-results');
+            resultsDiv.innerHTML = `
+                <div class="settings-card" style="border-left: 4px solid #ef4444;">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Debug Operation Failed</h4>
+                    <p style="color: #ef4444; margin: 0;">${error.message}</p>
+                    <p style="color: #64748b; margin: 10px 0 0 0; font-size: 0.9em;">
+                        Please check your admin permissions and try again.
+                    </p>
+                </div>
+            `;
         });
 }
 
@@ -566,39 +624,67 @@ function lookupApiKey() {
         return;
     }
     
+    if (apiKey.length !== 64) {
+        showError('API key must be exactly 64 characters');
+        return;
+    }
+    
     makeAuthenticatedRequest(`/admin/lookup-api-key-id/${encodeURIComponent(apiKey)}`)
-        .then(response => response ? response.json() : null)
-        .then(data => {
-            if (data) {
-                const resultsDiv = document.getElementById('lookup-results');
-                resultsDiv.innerHTML = `
-                    <div class="settings-card" style="margin-top: 1rem;">
-                        <h4>Lookup Results</h4>
-                        <div class="info-item">
-                            <span>API Key ID:</span>
-                            <span><code>${data.api_key_id}</code></span>
-                        </div>
-                        <div class="info-item">
-                            <span>Consumer:</span>
-                            <span>${data.consumer_name}</span>
-                        </div>
-                        <div class="info-item">
-                            <span>Email:</span>
-                            <span>${data.consumer_email}</span>
-                        </div>
-                        <div class="info-item">
-                            <span>Status:</span>
-                            <span class="status-badge ${data.is_active ? 'connected' : 'disconnected'}">
-                                ${data.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                        </div>
-                    </div>
-                `;
+        .then(response => {
+            if (!response) {
+                throw new Error('No response received');
             }
+            
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.detail || `HTTP ${response.status}: ${response.statusText}`);
+                });
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            const resultsDiv = document.getElementById('lookup-results');
+            resultsDiv.innerHTML = `
+                <div class="settings-card" style="margin-top: 1rem;">
+                    <h4><i class="fas fa-search-plus"></i> Lookup Results</h4>
+                    <div class="info-item">
+                        <span>API Key ID:</span>
+                        <span><code>${data.api_key_id || 'Not found'}</code></span>
+                    </div>
+                    <div class="info-item">
+                        <span>Consumer:</span>
+                        <span>${data.consumer_name || 'Unknown'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Email:</span>
+                        <span>${data.consumer_email || 'Unknown'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Status:</span>
+                        <span class="status-badge ${data.is_active ? 'connected' : 'disconnected'}">
+                            ${data.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span>Created:</span>
+                        <span>${data.created_at ? new Date(data.created_at).toLocaleString() : 'Unknown'}</span>
+                    </div>
+                </div>
+            `;
         })
         .catch(error => {
             console.error('Lookup error:', error);
-            showError('Lookup failed');
+            const resultsDiv = document.getElementById('lookup-results');
+            resultsDiv.innerHTML = `
+                <div class="settings-card" style="margin-top: 1rem; border-left: 4px solid #ef4444;">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Lookup Failed</h4>
+                    <p style="color: #ef4444; margin: 0;">${error.message}</p>
+                    <p style="color: #64748b; margin: 10px 0 0 0; font-size: 0.9em;">
+                        Please check the API key format and try again.
+                    </p>
+                </div>
+            `;
         });
 }
 
@@ -624,24 +710,95 @@ function viewRequestLogs() {
         return;
     }
     
+    // Validate input
+    if (identifier.length !== 64 && identifier.length !== 24) {
+        showError('Please enter a valid API key (64 chars) or API key ID (24 chars)');
+        return;
+    }
+    
     makeAuthenticatedRequest(`/admin/debug/request-logs/${encodeURIComponent(identifier)}`)
-        .then(response => response ? response.json() : null)
-        .then(data => {
-            if (data) {
-                const resultsDiv = document.getElementById('logs-results');
-                resultsDiv.innerHTML = `
-                    <div class="settings-card" style="margin-top: 1rem;">
-                        <h4>Request Logs</h4>
-                        <p>Consumer: ${data.consumer_name}</p>
-                        <p>Total Logs: ${data.request_logs_count}</p>
-                        <pre style="max-height: 300px; overflow-y: auto;">${JSON.stringify(data.recent_logs, null, 2)}</pre>
-                    </div>
-                `;
+        .then(response => {
+            if (!response) {
+                throw new Error('No response received');
             }
+            
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.detail || `HTTP ${response.status}: ${response.statusText}`);
+                });
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            const resultsDiv = document.getElementById('logs-results');
+            
+            // Format recent logs for better display
+            let logsDisplay = '';
+            if (data.recent_logs && data.recent_logs.length > 0) {
+                logsDisplay = data.recent_logs.map(log => `
+                    <div style="background: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 3px solid ${log.status === 'success' ? '#28a745' : '#dc3545'};">
+                        <div style="font-weight: 600; color: #333;">${log.endpoint || 'Unknown endpoint'}</div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            Status: <span style="color: ${log.status === 'success' ? '#28a745' : '#dc3545'};">${log.status || 'unknown'}</span> | 
+                            Time: ${log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Unknown'} | 
+                            Processing: ${log.processing_time || 0}s
+                        </div>
+                        ${log.error_message ? `<div style="color: #dc3545; font-size: 0.85em; margin-top: 4px;">Error: ${log.error_message}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                logsDisplay = '<div style="text-align: center; color: #666; padding: 20px;">No recent logs found</div>';
+            }
+            
+            resultsDiv.innerHTML = `
+                <div class="settings-card" style="margin-top: 1rem;">
+                    <h4><i class="fas fa-file-alt"></i> Request Logs</h4>
+                    <div class="info-item">
+                        <span>Consumer:</span>
+                        <span>${data.consumer_name || 'Unknown'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>API Key ID:</span>
+                        <span><code>${data.api_key_id || 'Unknown'}</code></span>
+                    </div>
+                    <div class="info-item">
+                        <span>Total Logs:</span>
+                        <span>${data.request_logs_count || 0}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Total Requests:</span>
+                        <span>${data.api_key_stats?.total_requests || 0}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Success Rate:</span>
+                        <span style="color: ${(data.api_key_stats?.total_requests || 0) > 0 ? '#28a745' : '#666'};">
+                            ${data.api_key_stats?.total_requests > 0 ? 
+                                Math.round((data.api_key_stats.successful_requests / data.api_key_stats.total_requests) * 100) + '%' : 
+                                'N/A'
+                            }
+                        </span>
+                    </div>
+                    
+                    <h5 style="margin: 20px 0 10px 0;"><i class="fas fa-history"></i> Recent Activity</h5>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                        ${logsDisplay}
+                    </div>
+                </div>
+            `;
         })
         .catch(error => {
             console.error('Logs error:', error);
-            showError('Failed to load logs');
+            const resultsDiv = document.getElementById('logs-results');
+            resultsDiv.innerHTML = `
+                <div class="settings-card" style="margin-top: 1rem; border-left: 4px solid #ef4444;">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Failed to Load Logs</h4>
+                    <p style="color: #ef4444; margin: 0;">${error.message}</p>
+                    <p style="color: #64748b; margin: 10px 0 0 0; font-size: 0.9em;">
+                        Please check the API key/ID format and try again.
+                    </p>
+                </div>
+            `;
         });
 }
 
