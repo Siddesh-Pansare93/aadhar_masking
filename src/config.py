@@ -22,13 +22,13 @@ class Config:
     """Application configuration class."""
     
     # Database Configuration
-    MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+    MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb+srv://siddeshpansare93:Siddesh207@cluster0.hpvnyoh.mongodb.net/?retryWrites=true&w=majority&appName=cluster0")
     DATABASE_NAME: str = os.getenv("DATABASE_NAME", "aadhaar_masking_db")
     GRID_FS_BUCKET: str = os.getenv("GRID_FS_BUCKET", "encrypted_images")
     
     # Encryption Configuration
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
-    SALT_KEY: str = os.getenv("SALT_KEY", "")
+    SALT_KEY: str = os.getenv("SALT_KEY", "devionx")
     
     # API Configuration
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
