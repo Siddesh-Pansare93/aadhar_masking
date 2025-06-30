@@ -79,12 +79,18 @@ async def authenticate_api_key(
     
     return consumer_data
 
-async def authenticate_admin(credentials: HTTPBasicCredentials = Depends(security)) -> bool:
+async def authenticate_admin(
+    request: Request,
+    admin_session: Optional[str] = Header(None, alias="X-Admin-Session"),
+    credentials: Optional[HTTPBasicCredentials] = Depends(security)
+) -> bool:
     """
-    Dependency to authenticate admin users.
+    Dependency to authenticate admin users with session support and basic auth fallback.
     
     Args:
-        credentials: HTTP Basic Auth credentials
+        request: FastAPI request object
+        admin_session: Session token from header
+        credentials: HTTP Basic Auth credentials (fallback)
         
     Returns:
         bool: True if authenticated
@@ -92,24 +98,38 @@ async def authenticate_admin(credentials: HTTPBasicCredentials = Depends(securit
     Raises:
         HTTPException: If authentication fails
     """
-    # Constant-time comparison to prevent timing attacks
-    correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
-    correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
-
-    logger.info(credentials)
-
-    logger.info(correct_password)
-    logger.info(correct_username)
+    # First, try session authentication
+    if admin_session:
+        # Check if session_manager is available in the app state
+        session_manager = getattr(request.app.state, 'session_manager', None)
+        
+        if session_manager:
+            session_data = session_manager.verify_session(admin_session)
+            if session_data:
+                logger.info(f"Admin authenticated via session: {session_data['user_id']}")
+                request.state.admin_user = session_data['user_id']
+                request.state.admin_session = admin_session
+                return True
+            else:
+                logger.warning(f"Invalid admin session token provided: {admin_session[:8]}...")
     
-    if not (correct_username and correct_password):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid admin credentials",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+    # Fallback to basic auth for backward compatibility
+    if credentials:
+        # Constant-time comparison to prevent timing attacks
+        correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
+        correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
+        
+        if correct_username and correct_password:
+            logger.info(f"Admin authenticated via basic auth: {credentials.username}")
+            request.state.admin_user = credentials.username
+            return True
     
-    logger.info(f"Admin authenticated: {credentials.username}")
-    return True
+    # No valid authentication found
+    raise HTTPException(
+        status_code=401,
+        detail="Admin authentication required. Please login or provide valid credentials.",
+        headers={"WWW-Authenticate": "Basic"},
+    )
 
 async def log_api_request(
     request: Request,

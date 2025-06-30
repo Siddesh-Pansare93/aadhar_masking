@@ -9,12 +9,14 @@ import os
 import sys
 import uuid
 import shutil
+import secrets
+import hashlib
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, timedelta
 import logging
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Query, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Query, Depends, Cookie
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,6 +44,79 @@ from src.auth import authenticate_api_key, authenticate_admin, log_api_request
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Session Management
+class SessionManager:
+    """Simple session management for admin authentication."""
+    
+    def __init__(self):
+        self.sessions = {}  # In production, use Redis or database
+        self.session_timeout = timedelta(hours=8)  # 8 hours default
+        self.remember_timeout = timedelta(days=30)  # 30 days for remember me
+    
+    def create_session(self, user_id: str, remember: bool = False) -> str:
+        """Create a new session and return session token."""
+        session_token = secrets.token_urlsafe(32)
+        timeout = self.remember_timeout if remember else self.session_timeout
+        
+        self.sessions[session_token] = {
+            "user_id": user_id,
+            "created_at": datetime.now(),
+            "expires_at": datetime.now() + timeout,
+            "remember": remember
+        }
+        
+        # Clean expired sessions
+        self._cleanup_expired_sessions()
+        
+        return session_token
+    
+    def verify_session(self, session_token: str) -> Optional[dict]:
+        """Verify session token and return session data if valid."""
+        if not session_token or session_token not in self.sessions:
+            return None
+        
+        session = self.sessions[session_token]
+        
+        # Check if session expired
+        if datetime.now() > session["expires_at"]:
+            del self.sessions[session_token]
+            return None
+        
+        # Extend session if it's a remember me session
+        if session["remember"]:
+            session["expires_at"] = datetime.now() + self.remember_timeout
+        
+        return session
+    
+    def invalidate_session(self, session_token: str) -> bool:
+        """Invalidate a session token."""
+        if session_token in self.sessions:
+            del self.sessions[session_token]
+            return True
+        return False
+    
+    def _cleanup_expired_sessions(self):
+        """Clean up expired sessions."""
+        now = datetime.now()
+        expired_tokens = [
+            token for token, session in self.sessions.items()
+            if now > session["expires_at"]
+        ]
+        for token in expired_tokens:
+            del self.sessions[token]
+
+# Admin credentials (in production, use proper user management)
+ADMIN_USERS = {
+    "admin123": {
+        "password_hash": hashlib.sha256("admin123".encode()).hexdigest(),
+        "user_id": "admin_user",
+        "permissions": ["all"]
+    }
+}
+
+# Global session manager
+session_manager = SessionManager()
+
 # Create FastAPI app
 app = FastAPI(
     title="Enhanced Aadhaar UID Masking API with Authentication",
@@ -53,6 +128,9 @@ app = FastAPI(
 async def startup_event():
     """Initialize database connection on startup."""
     try:
+        # Store session manager in app state for auth dependency
+        app.state.session_manager = session_manager
+        
         connected = await db_manager.connect()
         if connected:
             logger.info("Database connected successfully")
@@ -132,6 +210,24 @@ class BulkProcessResult(BaseModel):
     results: List[ProcessResult]
     errors: List[str]
 
+class AdminLoginRequest(BaseModel):
+    """Request model for admin login."""
+    username: str
+    password: str
+    remember: bool = False
+
+class AdminLoginResponse(BaseModel):
+    """Response model for admin login."""
+    success: bool
+    message: str
+    session_token: Optional[str] = None
+    redirect_url: str = "/admin/dashboard"
+    expires_in: Optional[int] = None  # seconds
+
+class SessionVerifyRequest(BaseModel):
+    """Request model for session verification."""
+    session_token: str
+
 def save_uploaded_file(upload_file: UploadFile, destination: Path) -> None:
     """Save uploaded file to destination."""
     try:
@@ -166,7 +262,8 @@ def get_frontend_html() -> str:
     <ul style="list-style: none;">
         <li><a href="/api/info">/api/info</a> - API information</li>
         <li><a href="/health">/health</a> - Health check</li>
-        <li><a href="/admin/dashboard">/admin/dashboard</a> - Admin dashboard (requires admin credentials)</li>
+        <li><a href="/admin/login">/admin/login</a> - Admin login</li>
+        <li><a href="/admin/dashboard">/admin/dashboard</a> - Admin dashboard</li>
     </ul>
 </body>
 </html>"""
@@ -277,7 +374,147 @@ async def health_check():
             "version": "3.0.0"
         }
 
-# ==== Admin Endpoints (Basic Auth Required) ====
+# ==== Admin Authentication Endpoints ====
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def admin_login_page():
+    """Serve the admin login page."""
+    try:
+        template_path = Path("templates/admin_login.html")
+        if template_path.exists():
+            return template_path.read_text(encoding='utf-8')
+        else:
+            raise FileNotFoundError("Admin login template not found")
+    except Exception as e:
+        logger.warning(f"Could not load admin login template: {e}")
+        # Fallback to basic HTML
+        return """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Error</title>
+    <style>body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }</style>
+</head>
+<body>
+    <h1>Admin Login</h1>
+    <p>Login template not found. Please ensure the template files are properly installed.</p>
+    <p><a href="/admin/login">Retry</a> | <a href="/">Back to Home</a></p>
+</body>
+</html>"""
+
+@app.post("/admin/login", response_model=AdminLoginResponse)
+async def admin_login(login_data: AdminLoginRequest):
+    """
+    Authenticate admin user and create session.
+    """
+    try:
+        # Verify credentials
+        username = login_data.username.strip()
+        password = login_data.password
+        
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password are required")
+        
+        # Check against admin users
+        if username in ADMIN_USERS:
+            user_info = ADMIN_USERS[username]
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            if secrets.compare_digest(password_hash, user_info["password_hash"]):
+                # Create session
+                session_token = session_manager.create_session(
+                    user_id=user_info["user_id"],
+                    remember=login_data.remember
+                )
+                
+                # Calculate expires_in seconds
+                timeout = session_manager.remember_timeout if login_data.remember else session_manager.session_timeout
+                expires_in = int(timeout.total_seconds())
+                
+                logger.info(f"Admin login successful: {username} (remember: {login_data.remember})")
+                
+                return AdminLoginResponse(
+                    success=True,
+                    message="Login successful",
+                    session_token=session_token,
+                    redirect_url="/admin/dashboard",
+                    expires_in=expires_in
+                )
+        
+        # Invalid credentials
+        logger.warning(f"Failed admin login attempt: {username}")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error during login")
+
+@app.post("/admin/verify-session")
+async def verify_admin_session(session_data: SessionVerifyRequest):
+    """
+    Verify admin session token.
+    """
+    try:
+        session_info = session_manager.verify_session(session_data.session_token)
+        
+        if session_info:
+            return {
+                "valid": True,
+                "user_id": session_info["user_id"],
+                "expires_at": session_info["expires_at"].isoformat(),
+                "remember": session_info["remember"]
+            }
+        else:
+            return {"valid": False}
+            
+    except Exception as e:
+        logger.error(f"Session verification error: {e}")
+        return {"valid": False}
+
+@app.post("/admin/logout")
+async def admin_logout(
+    request: Request,
+    session_token: Optional[str] = None,
+    admin_auth: bool = Depends(authenticate_admin)
+):
+    """
+    Logout admin user and invalidate session.
+    """
+    try:
+        # Get session token from request state or parameter
+        token_to_invalidate = session_token or getattr(request.state, 'admin_session', None)
+        
+        if token_to_invalidate:
+            success = session_manager.invalidate_session(token_to_invalidate)
+            if success:
+                logger.info(f"Admin session invalidated: {token_to_invalidate[:8]}...")
+                return {
+                    "success": True,
+                    "message": "Logged out successfully",
+                    "redirect_url": "/admin/login"
+                }
+        
+        return {
+            "success": True,
+            "message": "Logged out (no active session found)",
+            "redirect_url": "/admin/login"
+        }
+        
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        return {
+            "success": False,
+            "message": "Logout completed with errors",
+            "redirect_url": "/admin/login"
+        }
+
+# ==== Admin Endpoints (Authentication Required) ====
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(admin_auth: bool = Depends(authenticate_admin)):

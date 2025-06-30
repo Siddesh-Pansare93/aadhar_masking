@@ -5,73 +5,343 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Aadhaar UID Masking</title>
     <link rel="stylesheet" href="/static/admin_dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Aadhaar UID Masking - Admin Dashboard</h1>
-            <p>Manage API keys and view analytics</p>
-        </div>
-        
-        <div class="nav">
-            <button onclick="showSection('overview')">Overview</button>
-            <button onclick="showSection('create-key')">Create API Key</button>
-            <button onclick="showSection('manage-keys')">Manage Keys</button>
-            <button onclick="showSection('analytics')">Analytics</button>
-        </div>
-        
-        <div id="overview" class="section active">
-            <h2>System Overview</h2>
-            <div class="stats-grid" id="stats-container">
-                <div class="stat-card">
-                    <div class="stat-value" id="total-keys">-</div>
-                    <div>Total API Keys</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="active-keys">-</div>
-                    <div>Active Keys</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="total-requests">-</div>
-                    <div>Total Requests</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="success-rate">-</div>
-                    <div>Success Rate</div>
+    <div class="admin-container">
+        <!-- Enhanced Header with User Info and Logout -->
+        <header class="admin-header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <i class="fas fa-shield-alt logo-icon"></i>
+                    <div>
+                        <h1>Admin Dashboard</h1>
+                        <p>Aadhaar UID Masking System</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div id="create-key" class="section">
-            <h2>Create New API Key</h2>
+            <div class="header-right">
+                <div class="admin-info">
+                    <i class="fas fa-user-shield"></i>
+                    <span id="admin-username">Administrator</span>
+                </div>
+                <button class="logout-btn" onclick="adminLogout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Enhanced Navigation -->
+        <nav class="admin-nav">
+            <div class="nav-container">
+                <button class="nav-btn active" onclick="showSection('overview')" data-section="overview">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Overview</span>
+                </button>
+                <button class="nav-btn" onclick="showSection('api-keys')" data-section="api-keys">
+                    <i class="fas fa-key"></i>
+                    <span>API Keys</span>
+                </button>
+                <button class="nav-btn" onclick="showSection('analytics')" data-section="analytics">
+                    <i class="fas fa-analytics"></i>
+                    <span>Analytics</span>
+                </button>
+                <button class="nav-btn" onclick="showSection('debug')" data-section="debug">
+                    <i class="fas fa-bug"></i>
+                    <span>Debug Tools</span>
+                </button>
+                <button class="nav-btn" onclick="showSection('settings')" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+            <!-- Overview Section -->
+            <section id="overview" class="admin-section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> System Overview</h2>
+                    <button class="btn btn-icon" onclick="refreshOverview()" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <div class="card-icon">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3 id="total-api-keys">0</h3>
+                            <p>Active API Keys</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3 id="total-requests">0</h3>
+                            <p>Total Requests</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3 id="success-rate">0%</h3>
+                            <p>Success Rate</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3 id="avg-processing-time">0s</h3>
+                            <p>Avg Processing Time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                    <div id="recent-activity-list" class="activity-list">
+                        <div class="loading">Loading recent activity...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Keys Management Section -->
+            <section id="api-keys" class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-key"></i> API Keys Management</h2>
+                    <button class="btn btn-primary" onclick="showCreateKeyModal()">
+                        <i class="fas fa-plus"></i>
+                        Create New API Key
+                    </button>
+                </div>
+
+                <div class="api-keys-list">
+                    <div class="loading" id="keys-loading">Loading API keys...</div>
+                    <div id="keys-container"></div>
+                </div>
+            </section>
+
+            <!-- System Analytics Section -->
+            <section id="analytics" class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-analytics"></i> System Analytics</h2>
+                    <button class="btn btn-secondary" onclick="refreshAnalytics()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh Data
+                    </button>
+                </div>
+
+                <div class="analytics-container">
+                    <div class="loading" id="analytics-loading">Loading analytics...</div>
+                    <div id="analytics-container"></div>
+                </div>
+            </section>
+
+            <!-- Debug Tools Section -->
+            <section id="debug" class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-bug"></i> Debug Tools</h2>
+                    <p class="section-description">Diagnostic and troubleshooting tools</p>
+                </div>
+
+                <div class="debug-tools">
+                    <div class="tool-grid">
+                        <button class="tool-card" onclick="debugApiKeys()">
+                            <i class="fas fa-search"></i>
+                            <h4>Debug API Keys</h4>
+                            <p>View all API keys in database</p>
+                        </button>
+                        
+                        <button class="tool-card" onclick="showLookupTool()">
+                            <i class="fas fa-fingerprint"></i>
+                            <h4>Lookup API Key ID</h4>
+                            <p>Find API Key ID from key value</p>
+                        </button>
+                        
+                        <button class="tool-card" onclick="showLogsTool()">
+                            <i class="fas fa-file-alt"></i>
+                            <h4>View Request Logs</h4>
+                            <p>Examine request logs and analytics</p>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="debug-results" class="debug-results"></div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> System Settings</h2>
+                    <p class="section-description">Configure system settings and preferences</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h4><i class="fas fa-shield-alt"></i> Security Settings</h4>
+                        <div class="setting-item">
+                            <label>Session Timeout (hours):</label>
+                            <input type="number" value="8" min="1" max="24" id="session-timeout">
+                        </div>
+                        <div class="setting-item">
+                            <label>Remember Me Duration (days):</label>
+                            <input type="number" value="30" min="1" max="90" id="remember-duration">
+                        </div>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h4><i class="fas fa-database"></i> System Info</h4>
+                        <div class="info-item">
+                            <span>Database Status:</span>
+                            <span class="status-badge connected" id="db-status">Connected</span>
+                        </div>
+                        <div class="info-item">
+                            <span>Encryption Status:</span>
+                            <span class="status-badge connected" id="encryption-status">Ready</span>
+                        </div>
+                        <div class="info-item">
+                            <span>API Version:</span>
+                            <span>3.0.0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Enhanced Create API Key Modal -->
+    <div id="create-key-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> Create New API Key</h3>
+                <span class="close" onclick="closeCreateKeyModal()">&times;</span>
+            </div>
             <form id="create-key-form">
-                <div class="form-group">
-                    <label for="consumer_name">Consumer Name:</label>
-                    <input type="text" id="consumer_name" name="consumer_name" required>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="consumer-name">
+                            <i class="fas fa-user"></i>
+                            Consumer Name:
+                        </label>
+                        <input type="text" id="consumer-name" required placeholder="Enter consumer name">
+                    </div>
+                    <div class="form-group">
+                        <label for="consumer-email">
+                            <i class="fas fa-envelope"></i>
+                            Consumer Email:
+                        </label>
+                        <input type="email" id="consumer-email" required placeholder="Enter email address">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="consumer_email">Consumer Email:</label>
-                    <input type="email" id="consumer_email" name="consumer_email" required>
+                    <label for="description">
+                        <i class="fas fa-file-text"></i>
+                        Description (optional):
+                    </label>
+                    <textarea id="description" rows="3" placeholder="Enter a description for this API key"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="description">Description (Optional):</label>
-                    <textarea id="description" name="description" rows="3"></textarea>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key"></i>
+                        Create API Key
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateKeyModal()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
                 </div>
-                <button type="submit" class="btn">Generate API Key</button>
             </form>
-            <div id="create-result"></div>
         </div>
-        
-        <div id="manage-keys" class="section">
-            <h2>Manage API Keys</h2>
-            <button onclick="loadAPIKeys()" class="btn">Refresh List</button>
-            <div id="api-keys-container"></div>
+    </div>
+
+    <!-- Enhanced Lookup Tool Modal -->
+    <div id="lookup-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-search"></i> API Key Lookup Tool</h3>
+                <span class="close" onclick="closeLookupModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="lookup-key">
+                    <i class="fas fa-fingerprint"></i>
+                    API Key (64 characters):
+                </label>
+                <input type="text" id="lookup-key" placeholder="Enter the full API key to get its ID">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="lookupApiKey()">
+                    <i class="fas fa-search"></i>
+                    Lookup ID
+                </button>
+                <button class="btn btn-secondary" onclick="closeLookupModal()">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+            <div id="lookup-results"></div>
         </div>
-        
-        <div id="analytics" class="section">
-            <h2>System Analytics</h2>
-            <button onclick="loadAnalytics()" class="btn">Refresh Analytics</button>
-            <div id="analytics-container"></div>
+    </div>
+
+    <!-- Enhanced Request Logs Modal -->
+    <div id="logs-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-alt"></i> Request Logs Viewer</h3>
+                <span class="close" onclick="closeLogsModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="logs-identifier">
+                    <i class="fas fa-key"></i>
+                    API Key or API Key ID:
+                </label>
+                <input type="text" id="logs-identifier" placeholder="Enter API key (64 chars) or API key ID (24 chars)">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="viewRequestLogs()">
+                    <i class="fas fa-eye"></i>
+                    View Logs
+                </button>
+                <button class="btn btn-secondary" onclick="closeLogsModal()">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+            <div id="logs-results"></div>
+        </div>
+    </div>
+
+    <!-- Session Check and Logout Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h3><i class="fas fa-sign-out-alt"></i> Confirm Logout</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-danger" onclick="confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Yes, Logout
+                </button>
+                <button class="btn btn-secondary" onclick="closeLogoutModal()">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
 
