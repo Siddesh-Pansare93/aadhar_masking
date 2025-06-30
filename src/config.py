@@ -27,8 +27,8 @@ class Config:
     GRID_FS_BUCKET: str = os.getenv("GRID_FS_BUCKET", "encrypted_images")
     
     # Encryption Configuration
-    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
-    SALT_KEY: str = os.getenv("SALT_KEY", "devionx")
+    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "fQ4H8-3yFQBpFzGz1j_mVKzSqHjM4_TsZkU8VGE1H3o=")
+    SALT_KEY: str = os.getenv("SALT_KEY", "devionx_fixed_salt_2024_stable")
     
     # API Configuration
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
@@ -78,13 +78,16 @@ class Config:
     @classmethod
     def setup_development_keys(cls) -> None:
         """Set up development keys if they don't exist."""
-        if not cls.ENCRYPTION_KEY or cls.ENCRYPTION_KEY == "your_secret_encryption_key_here":
+        # Only regenerate keys if they are specifically set to the old placeholder values
+        if cls.ENCRYPTION_KEY == "your_secret_encryption_key_here":
             encryption_key, salt_key = cls.generate_keys()
             cls.ENCRYPTION_KEY = encryption_key
             cls.SALT_KEY = salt_key
             print("⚠️  Development keys generated. In production, set proper environment variables:")
             print(f"ENCRYPTION_KEY={encryption_key}")
             print(f"SALT_KEY={salt_key}")
+        else:
+            print("✅ Using fixed encryption keys - API keys will persist across restarts")
     
     @classmethod
     def get_fernet_key(cls) -> bytes:

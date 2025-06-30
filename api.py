@@ -115,6 +115,11 @@ for directory in [UPLOAD_DIR, OUTPUT_DIR, STATIC_DIR]:
 # Mount static files to serve processed images
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# Mount scripts directory to serve JavaScript files
+SCRIPTS_DIR = Path("scripts")
+SCRIPTS_DIR.mkdir(exist_ok=True)
+app.mount("/scripts", StaticFiles(directory=str(SCRIPTS_DIR)), name="scripts")
+
 # Initialize detector and masker
 detector = AadhaarOCRDetector(use_easyocr=True)
 masker = AadhaarImageMasker()
