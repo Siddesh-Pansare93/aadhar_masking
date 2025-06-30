@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Aadhaar UID Masking</title>
+    <link rel="stylesheet" href="/static/admin_dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Aadhaar UID Masking - Admin Dashboard</h1>
+            <p>Manage API keys and view analytics</p>
+        </div>
+        
+        <div class="nav">
+            <button onclick="showSection('overview')">Overview</button>
+            <button onclick="showSection('create-key')">Create API Key</button>
+            <button onclick="showSection('manage-keys')">Manage Keys</button>
+            <button onclick="showSection('analytics')">Analytics</button>
+        </div>
+        
+        <div id="overview" class="section active">
+            <h2>System Overview</h2>
+            <div class="stats-grid" id="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-keys">-</div>
+                    <div>Total API Keys</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-keys">-</div>
+                    <div>Active Keys</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-requests">-</div>
+                    <div>Total Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="success-rate">-</div>
+                    <div>Success Rate</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="create-key" class="section">
+            <h2>Create New API Key</h2>
+            <form id="create-key-form">
+                <div class="form-group">
+                    <label for="consumer_name">Consumer Name:</label>
+                    <input type="text" id="consumer_name" name="consumer_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="consumer_email">Consumer Email:</label>
+                    <input type="email" id="consumer_email" name="consumer_email" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description (Optional):</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn">Generate API Key</button>
+            </form>
+            <div id="create-result"></div>
+        </div>
+        
+        <div id="manage-keys" class="section">
+            <h2>Manage API Keys</h2>
+            <button onclick="loadAPIKeys()" class="btn">Refresh List</button>
+            <div id="api-keys-container"></div>
+        </div>
+        
+        <div id="analytics" class="section">
+            <h2>System Analytics</h2>
+            <button onclick="loadAnalytics()" class="btn">Refresh Analytics</button>
+            <div id="analytics-container"></div>
+        </div>
+    </div>
+
+    <script src="/scripts/admin_dashboard.js"></script>
+</body>
+</html> 
