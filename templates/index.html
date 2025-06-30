@@ -500,6 +500,256 @@
             color: #333;
         }
 
+        /* API Key Section Styles */
+        .api-key-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .api-key-container h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            text-align: center;
+        }
+
+        .api-key-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .api-key-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            min-height: 20px;
+        }
+
+        .api-key-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .api-key-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .api-key-status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .api-key-help {
+            text-align: center;
+            color: #666;
+        }
+
+        .api-key-help a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .api-key-help a:hover {
+            text-decoration: underline;
+        }
+
+        /* Disabled state for forms when no API key */
+        .disabled-section {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .disabled-section::before {
+            content: '🔒 API Key Required';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            color: #dc3545;
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Image Preview Styles */
+        .preview-container {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .preview-container.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .preview-container h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            text-align: center;
+        }
+
+        .preview-image-wrapper {
+            position: relative;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-image {
+            width: 100%;
+            max-width: 400px;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .preview-filename {
+            font-weight: bold;
+            color: #333;
+            max-width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .preview-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .remove-preview-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .remove-preview-btn:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        /* Bulk Preview Grid */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .preview-grid-item {
+            position: relative;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .preview-grid-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .preview-grid-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .preview-grid-info {
+            text-align: center;
+        }
+
+        .preview-grid-filename {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .preview-grid-size {
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        .preview-grid-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .preview-grid-remove:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2em;
@@ -544,6 +794,38 @@
             .statistics-grid {
                 grid-template-columns: 1fr;
             }
+
+            .api-key-input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .api-key-input-group input {
+                margin-bottom: 10px;
+            }
+
+            .api-key-input-group button {
+                margin-left: 0 !important;
+            }
+
+            .preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .preview-image {
+                max-height: 200px;
+            }
+
+            .preview-info {
+                flex-direction: column;
+                gap: 5px;
+                align-items: flex-start;
+            }
+
+            .preview-filename {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -555,6 +837,27 @@
         </div>
 
         <div class="main-content">
+            <!-- API Key Configuration Section -->
+            <div id="api-key-section" class="api-key-section">
+                <div class="api-key-container">
+                    <h3>🔑 API Configuration</h3>
+                    <div class="api-key-input-group">
+                        <input type="password" id="api-key-input" placeholder="Enter your API key..." 
+                               style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        <button class="btn" onclick="setApiKey()" id="set-key-btn" style="margin-left: 10px;">
+                            🔐 Set Key
+                        </button>
+                        <button class="btn" onclick="clearApiKey()" style="background: #6c757d; margin-left: 5px;">
+                            🗑 Clear
+                        </button>
+                    </div>
+                    <div id="api-key-status" class="api-key-status"></div>
+                    <div class="api-key-help">
+                        <small>💡 <strong>Need an API key?</strong> Contact the administrator or visit the <a href="/admin/dashboard" target="_blank">admin dashboard</a> to generate one.</small>
+                    </div>
+                </div>
+            </div>
+
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('single')">
                     📄 Single Image
@@ -575,6 +878,19 @@
                     <div class="upload-subtext">or drag and drop your Aadhaar card image here</div>
                 </div>
                 <input type="file" id="single-file" class="file-input" accept="image/*">
+                
+                <!-- Single Image Preview -->
+                <div id="single-preview-container" class="preview-container">
+                    <h4>📷 Image Preview</h4>
+                    <div class="preview-image-wrapper">
+                        <img id="single-preview-image" class="preview-image" alt="Image Preview">
+                        <div class="preview-info">
+                            <span id="single-preview-filename" class="preview-filename"></span>
+                            <span id="single-preview-size" class="preview-size"></span>
+                        </div>
+                        <button class="remove-preview-btn" onclick="clearSinglePreview()">✕</button>
+                    </div>
+                </div>
                 
                 <div style="text-align: center; margin: 20px 0;">
                     <label style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
@@ -602,6 +918,12 @@
                     <div class="upload-subtext">or drag and drop up to 10 images here</div>
                 </div>
                 <input type="file" id="bulk-files" class="file-input" accept="image/*" multiple>
+                
+                <!-- Bulk Images Preview -->
+                <div id="bulk-preview-container" class="preview-container">
+                    <h4>📷 Images Preview</h4>
+                    <div id="bulk-preview-grid" class="preview-grid"></div>
+                </div>
                 
                 <div id="bulk-file-list" class="file-list"></div>
 

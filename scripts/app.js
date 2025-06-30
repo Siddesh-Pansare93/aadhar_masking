@@ -9,6 +9,77 @@ let currentPage = 1;
 let currentSearch = '';
 const pageSize = 10;
 
+// API Key management
+let currentApiKey = null;
+
+// API Key Functions
+function setApiKey() {
+    const input = document.getElementById('api-key-input');
+    const apiKey = input.value.trim();
+    
+    if (!apiKey) {
+        showApiKeyStatus('Please enter an API key', 'error');
+        return;
+    }
+    
+    if (apiKey.length !== 64) {
+        showApiKeyStatus('API key should be 64 characters long', 'error');
+        return;
+    }
+    
+    currentApiKey = apiKey;
+    localStorage.setItem('aadhaar_api_key', apiKey);
+    
+    showApiKeyStatus('✅ API key set successfully! You can now process images.', 'success');
+    updateUIState(true);
+    
+    // Clear input for security
+    input.value = '';
+}
+
+function clearApiKey() {
+    currentApiKey = null;
+    localStorage.removeItem('aadhaar_api_key');
+    document.getElementById('api-key-input').value = '';
+    showApiKeyStatus('API key cleared. Enter a new key to continue.', 'warning');
+    updateUIState(false);
+}
+
+function getApiKey() {
+    return currentApiKey;
+}
+
+function showApiKeyStatus(message, type) {
+    const statusDiv = document.getElementById('api-key-status');
+    statusDiv.textContent = message;
+    statusDiv.className = `api-key-status ${type}`;
+}
+
+function updateUIState(hasApiKey) {
+    const singleTab = document.getElementById('single-tab');
+    const bulkTab = document.getElementById('bulk-tab');
+    
+    if (hasApiKey) {
+        singleTab.classList.remove('disabled-section');
+        bulkTab.classList.remove('disabled-section');
+    } else {
+        singleTab.classList.add('disabled-section');
+        bulkTab.classList.add('disabled-section');
+    }
+}
+
+function loadStoredApiKey() {
+    const storedKey = localStorage.getItem('aadhaar_api_key');
+    if (storedKey && storedKey.length === 64) {
+        currentApiKey = storedKey;
+        showApiKeyStatus('✅ API key loaded from storage', 'success');
+        updateUIState(true);
+    } else {
+        showApiKeyStatus('Please enter your API key to get started', 'warning');
+        updateUIState(false);
+    }
+}
+
 // Tab switching
 function switchTab(tabName) {
     // Update tab buttons
@@ -23,6 +94,17 @@ function switchTab(tabName) {
     document.getElementById('single-results').innerHTML = '';
     document.getElementById('bulk-results').innerHTML = '';
 
+    // Clear previews when switching tabs
+    if (tabName !== 'single') {
+        hideSingleImagePreview();
+    }
+    if (tabName !== 'bulk') {
+        const bulkPreviewContainer = document.getElementById('bulk-preview-container');
+        if (bulkPreviewContainer) {
+            bulkPreviewContainer.classList.remove('show');
+        }
+    }
+
     // Load records if switching to records tab
     if (tabName === 'records') {
         loadRecords();
@@ -32,6 +114,9 @@ function switchTab(tabName) {
 
 // File handling for single image
 document.addEventListener('DOMContentLoaded', () => {
+    // Load stored API key on page load
+    loadStoredApiKey();
+    
     const singleFileInput = document.getElementById('single-file');
     if (singleFileInput) {
         singleFileInput.addEventListener('change', function(e) {
@@ -41,9 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file) {
                 processBtn.disabled = false;
                 processBtn.textContent = `Process "${file.name}"`;
+                showSingleImagePreview(file);
             } else {
                 processBtn.disabled = true;
                 processBtn.textContent = 'Process Image';
+                hideSingleImagePreview();
             }
         });
     }
@@ -67,6 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // API Key input Enter key handler
+    const apiKeyInput = document.getElementById('api-key-input');
+    if (apiKeyInput) {
+        apiKeyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                setApiKey();
+            }
+        });
+    }
+
     // Initialize drag and drop
     setupDragAndDrop();
 });
@@ -78,6 +175,7 @@ function addBulkFiles(files) {
         }
     });
     updateBulkFileList();
+    showBulkImagePreviews();
 }
 
 function updateBulkFileList() {
@@ -114,6 +212,7 @@ function clearBulkFiles() {
     selectedFiles = [];
     document.getElementById('bulk-files').value = '';
     updateBulkFileList();
+    showBulkImagePreviews(); // This will hide previews since selectedFiles is empty
 }
 
 function formatFileSize(bytes) {
@@ -122,6 +221,77 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Image Preview Functions
+function showSingleImagePreview(file) {
+    const previewContainer = document.getElementById('single-preview-container');
+    const previewImage = document.getElementById('single-preview-image');
+    const previewFilename = document.getElementById('single-preview-filename');
+    const previewSize = document.getElementById('single-preview-size');
+
+    // Create file reader
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        previewImage.src = e.target.result;
+        previewFilename.textContent = file.name;
+        previewSize.textContent = formatFileSize(file.size);
+        previewContainer.classList.add('show');
+    };
+    reader.readAsDataURL(file);
+}
+
+function hideSingleImagePreview() {
+    const previewContainer = document.getElementById('single-preview-container');
+    previewContainer.classList.remove('show');
+}
+
+function clearSinglePreview() {
+    const fileInput = document.getElementById('single-file');
+    const processBtn = document.getElementById('single-process-btn');
+    
+    fileInput.value = '';
+    processBtn.disabled = true;
+    processBtn.textContent = 'Process Image';
+    hideSingleImagePreview();
+}
+
+function showBulkImagePreviews() {
+    const previewContainer = document.getElementById('bulk-preview-container');
+    const previewGrid = document.getElementById('bulk-preview-grid');
+    
+    if (selectedFiles.length === 0) {
+        previewContainer.classList.remove('show');
+        return;
+    }
+
+    // Clear existing previews
+    previewGrid.innerHTML = '';
+    
+    selectedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-grid-item';
+            previewItem.innerHTML = `
+                <img src="${e.target.result}" alt="Preview" class="preview-grid-image">
+                <div class="preview-grid-info">
+                    <div class="preview-grid-filename" title="${file.name}">${file.name}</div>
+                    <div class="preview-grid-size">${formatFileSize(file.size)}</div>
+                </div>
+                <button class="preview-grid-remove" onclick="removeFileFromPreview(${index})" title="Remove image">✕</button>
+            `;
+            previewGrid.appendChild(previewItem);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    previewContainer.classList.add('show');
+}
+
+function removeFileFromPreview(index) {
+    removeFile(index);
+    showBulkImagePreviews(); // Refresh previews
 }
 
 // Drag and drop functionality
@@ -153,8 +323,9 @@ function setupDragAndDrop() {
 
             if (this.closest('#single-tab')) {
                 if (files.length === 1) {
-                    document.getElementById('single-file').files = e.dataTransfer.files;
-                    document.getElementById('single-file').dispatchEvent(new Event('change'));
+                    const fileInput = document.getElementById('single-file');
+                    fileInput.files = e.dataTransfer.files;
+                    fileInput.dispatchEvent(new Event('change'));
                 } else {
                     alert('Please drop only one image for single processing.');
                 }
@@ -167,6 +338,13 @@ function setupDragAndDrop() {
 
 // Processing functions
 async function processSingleImage() {
+    // Check if API key is set
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert('❌ Please set your API key first in the configuration section above.');
+        return;
+    }
+
     const fileInput = document.getElementById('single-file');
     const file = fileInput.files[0];
     const storeInDB = document.getElementById('single-store-checkbox').checked;
@@ -189,17 +367,31 @@ async function processSingleImage() {
 
         const response = await fetch(endpoint, {
             method: 'POST',
-            body: formData , 
-            headers :{
-                'X-API-Key' : '22b0eeb767d3a9e450b0f187ffb6429d74a20c3ff8750a9c046ad62bcfa26a3e' 
-            }   
+            body: formData,
+            headers: {
+                'X-API-Key': apiKey
+            }
         });
 
         if (response.ok) {
             const result = await response.json();
             displaySingleResult(result, storeInDB);
+            // Clear preview after successful processing
+            setTimeout(() => {
+                hideSingleImagePreview();
+                document.getElementById('single-file').value = '';
+                document.getElementById('single-process-btn').disabled = true;
+                document.getElementById('single-process-btn').textContent = 'Process Image';
+            }, 1000);
         } else {
             const errorData = await response.json();
+            
+            // Handle API key related errors specifically
+            if (response.status === 401 || response.status === 403) {
+                showApiKeyStatus('❌ Invalid API key. Please check your key and try again.', 'error');
+                throw new Error('Invalid API key. Please check your API key and try again.');
+            }
+            
             throw new Error(errorData.detail || `HTTP ${response.status}`);
         }
     } catch (error) {
@@ -210,6 +402,13 @@ async function processSingleImage() {
 }
 
 async function processBulkImages() {
+    // Check if API key is set
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert('❌ Please set your API key first in the configuration section above.');
+        return;
+    }
+
     if (selectedFiles.length === 0) {
         alert('Please select image files');
         return;
@@ -225,14 +424,28 @@ async function processBulkImages() {
 
         const response = await fetch(`${API_BASE_URL}/process-bulk`, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'X-API-Key': apiKey
+            }
         });
 
         if (response.ok) {
             const result = await response.json();
             displayBulkResults(result);
+            // Clear previews and files after successful processing
+            setTimeout(() => {
+                clearBulkFiles();
+            }, 2000);
         } else {
             const errorData = await response.json();
+            
+            // Handle API key related errors specifically
+            if (response.status === 401 || response.status === 403) {
+                showApiKeyStatus('❌ Invalid API key. Please check your key and try again.', 'error');
+                throw new Error('Invalid API key. Please check your API key and try again.');
+            }
+            
             throw new Error(errorData.detail || `HTTP ${response.status}`);
         }
     } catch (error) {
